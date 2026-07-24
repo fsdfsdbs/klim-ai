@@ -19,6 +19,18 @@ export default function Home() {
     api: '/api/chat',
     id: chatId,
     body: { model },
+    
+    // --- CALLBACKS DE DÉBOGAGE ---
+    onResponse: (response) => {
+      console.log('🟡 [onResponse] Statut HTTP:', response.status, response.statusText);
+    },
+    onError: (error) => {
+      console.error('🔴 [onError] Erreur interceptée par useChat:', error);
+    },
+    onFinish: (message) => {
+      console.log('🟢 [onFinish] Message final reçu:', message);
+    }
+    // -----------------------------
   });
 
   useEffect(() => {
