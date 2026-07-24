@@ -10,7 +10,12 @@ interface Props {
   refreshKey: number;
 }
 
-export default function Sidebar({ onNewChat, onLoadChat, activeId, refreshKey }: Props) {
+export default function Sidebar({
+  onNewChat,
+  onLoadChat,
+  activeId,
+  refreshKey,
+}: Props) {
   const [conversations, setConversations] = useState<SavedConversation[]>([]);
 
   useEffect(() => {
@@ -18,39 +23,81 @@ export default function Sidebar({ onNewChat, onLoadChat, activeId, refreshKey }:
   }, [refreshKey]);
 
   return (
-    <div className="w-64 bg-[#181613] border-r border-[#3D3934] flex flex-col p-3">
-      <button
-        onClick={onNewChat}
-        className="flex items-center gap-2 bg-[#D97757] hover:bg-[#C86A4B] text-white rounded-xl py-2.5 px-3 mb-4 transition text-sm font-medium"
-      >
-        + Nouvelle conversation
-      </button>
-      <div className="flex-1 overflow-y-auto text-sm space-y-0.5">
-        {conversations.length === 0 && (
-          <p className="px-3 text-[#8A8578] text-xs mt-2">Aucune conversation sauvegardée</p>
-        )}
-        {conversations.map((c) => (
-          <div
-            key={c.id}
-            className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer group ${
-              activeId === c.id ? 'bg-[#2A2825] text-[#F5F1EB]' : 'hover:bg-[#221F1C] text-[#B5AFA2]'
-            }`}
-          >
-            <span onClick={() => onLoadChat(c)} className="truncate flex-1">
-              {c.title}
-            </span>
-            <button
-              onClick={() => {
-                deleteConversation(c.id);
-                setConversations(loadConversations());
-              }}
-              className="opacity-0 group-hover:opacity-100 text-[#8A8578] hover:text-red-400 ml-2"
-            >
-              ✕
-            </button>
-          </div>
-        ))}
+    <aside className="w-[260px] bg-[#1C1C1A] border-r border-[#2B2B29] flex flex-col">
+      {/* Logo */}
+      <div className="px-5 pt-5 pb-4">
+        <h1 className="text-xl font-semibold text-[#F5F5F3] tracking-tight">
+          Klim
+        </h1>
       </div>
-    </div>
+
+      {/* Nouveau chat */}
+      <div className="px-3">
+        <button
+          onClick={onNewChat}
+          className="w-full h-11 rounded-xl bg-[#2B2B29] hover:bg-[#343432] text-[#F5F5F3] transition flex items-center gap-3 px-4 text-sm"
+        >
+          <span className="text-lg leading-none">+</span>
+          <span>Nouvelle conversation</span>
+        </button>
+      </div>
+
+      {/* Conversations */}
+      <div className="flex-1 overflow-y-auto px-2 mt-5">
+        {conversations.length === 0 && (
+          <p className="text-xs text-[#8F8F8A] px-3">
+            Aucune conversation
+          </p>
+        )}
+
+        <div className="space-y-1">
+          {conversations.map((c) => (
+            <div
+              key={c.id}
+              className={`group flex items-center rounded-xl transition ${
+                activeId === c.id
+                  ? 'bg-[#323230]'
+                  : 'hover:bg-[#2A2A28]'
+              }`}
+            >
+              <button
+                onClick={() => onLoadChat(c)}
+                className="flex-1 text-left px-3 py-2.5 text-sm truncate text-[#F5F5F3]"
+              >
+                {c.title}
+              </button>
+
+              <button
+                onClick={() => {
+                  deleteConversation(c.id);
+                  setConversations(loadConversations());
+                }}
+                className="opacity-0 group-hover:opacity-100 transition px-3 text-[#8F8F8A] hover:text-white"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-[#2B2B29] p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-[#3A3A37] flex items-center justify-center text-sm text-white">
+            K
+          </div>
+
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-sm text-[#F5F5F3] truncate">
+              Utilisateur
+            </span>
+            <span className="text-xs text-[#8F8F8A]">
+              Plan gratuit
+            </span>
+          </div>
+        </div>
+      </div>
+    </aside>
   );
 }
