@@ -12,7 +12,7 @@ export default function ModelSelector({ model, setModel }: Props) {
     <select
       value={model}
       onChange={(e) => setModel(e.target.value)}
-      className="bg-gray-50 text-gray-800 text-sm rounded-lg px-3 py-2 border border-gray-200 focus:outline-none focus:border-gray-300"
+      className="bg-[#2A2825] text-[#F5F1EB] text-sm rounded-lg px-3 py-2 border border-[#3D3934] focus:outline-none focus:border-[#D97757]"
     >
       {AVAILABLE_MODELS.map((m) => (
         <option key={m.id} value={m.id}>
