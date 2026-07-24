@@ -18,7 +18,7 @@ export default function ChatInput({ input, handleInputChange, handleSubmit, isLo
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-end gap-2 border border-gray-200 rounded-2xl px-4 py-3 shadow-sm focus-within:border-gray-300 transition"
+      className="flex items-end gap-2 bg-[#2A2825] border border-[#3D3934] rounded-2xl px-4 py-3 focus-within:border-[#D97757] transition"
     >
       <textarea
         value={input}
@@ -26,12 +26,12 @@ export default function ChatInput({ input, handleInputChange, handleSubmit, isLo
         onKeyDown={onKeyDown}
         placeholder="Écris ton message..."
         rows={1}
-        className="flex-1 resize-none focus:outline-none text-gray-900 placeholder-gray-400 max-h-40"
+        className="flex-1 resize-none bg-transparent focus:outline-none text-[#F5F1EB] placeholder-[#8A8578] max-h-40"
       />
       <button
         type="submit"
         disabled={isLoading || !input.trim()}
-        className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:cursor-not-allowed text-white rounded-xl w-9 h-9 flex items-center justify-center transition shrink-0"
+        className="bg-[#D97757] hover:bg-[#C86A4B] disabled:bg-[#3D3934] disabled:cursor-not-allowed text-white rounded-xl w-9 h-9 flex items-center justify-center transition shrink-0"
       >
         ↑
       </button>
