@@ -16,21 +16,24 @@ export default function ChatInput({ input, handleInputChange, handleSubmit, isLo
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 p-4 border-t bg-white">
+    <form
+      onSubmit={handleSubmit}
+      className="flex items-end gap-2 border border-gray-200 rounded-2xl px-4 py-3 shadow-sm focus-within:border-gray-300 transition"
+    >
       <textarea
         value={input}
         onChange={handleInputChange}
         onKeyDown={onKeyDown}
-        placeholder="Écris ton message... (Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne)"
+        placeholder="Écris ton message..."
         rows={1}
-        className="flex-1 border rounded-xl px-4 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="flex-1 resize-none focus:outline-none text-gray-900 placeholder-gray-400 max-h-40"
       />
       <button
         type="submit"
-        disabled={isLoading}
-        className="bg-blue-600 text-white px-5 py-2 rounded-xl disabled:opacity-50"
+        disabled={isLoading || !input.trim()}
+        className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:cursor-not-allowed text-white rounded-xl w-9 h-9 flex items-center justify-center transition shrink-0"
       >
-        Envoyer
+        ↑
       </button>
     </form>
   );
