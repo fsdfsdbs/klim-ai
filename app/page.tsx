@@ -9,18 +9,11 @@ import ModelSelector from '@/components/ModelSelector';
 import ArtifactPanel from '@/components/ArtifactPanel';
 import { saveConversation, SavedConversation } from '@/lib/storage';
 
-function extractHtmlArtifact(messages: any[]): string | null {
-  const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
-  if (!lastAssistant) return null;
-  const match = lastAssistant.content.match(/```html\n([\s\S]*?)```/);
-  return match ? match[1] : null;
-}
-
 export default function Home() {
   const [model, setModel] = useState('openai/gpt-oss-120b');
   const [chatId, setChatId] = useState<string>(() => crypto.randomUUID());
   const [refreshKey, setRefreshKey] = useState(0);
-  const [showArtifact, setShowArtifact] = useState(true);
+  const [artifact, setArtifact] = useState<{ language: string; code: string } | null>(null);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages } = useChat({
     api: '/api/chat',
@@ -39,34 +32,21 @@ export default function Home() {
   const onNewChat = () => {
     setChatId(crypto.randomUUID());
     setMessages([]);
+    setArtifact(null);
   };
 
   const onLoadChat = (conv: SavedConversation) => {
     setChatId(conv.id);
     setMessages(conv.messages);
+    setArtifact(null);
   };
 
-  const artifactCode = extractHtmlArtifact(messages);
-
   return (
-    <div className="flex h-screen bg-white">
-      <Sidebar
-        onNewChat={onNewChat}
-        onLoadChat={onLoadChat}
-        activeId={chatId}
-        refreshKey={refreshKey}
-      />
+    <div className="flex h-screen bg-[#1B1A17]">
+      <Sidebar onNewChat={onNewChat} onLoadChat={onLoadChat} activeId={chatId} refreshKey={refreshKey} />
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-[#3D3934]">
           <ModelSelector model={model} setModel={setModel} />
-          {artifactCode && (
-            <button
-              onClick={() => setShowArtifact((s) => !s)}
-              className="text-sm bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
-            >
-              {showArtifact ? 'Masquer' : 'Afficher'} l'aperçu
-            </button>
-          )}
         </div>
 
         <div className="flex flex-1 overflow-hidden">
@@ -74,10 +54,8 @@ export default function Home() {
             <div className="flex-1 overflow-y-auto">
               <div className="max-w-3xl mx-auto w-full px-6 py-8">
                 {messages.length === 0 && (
-                  <div className="text-center text-gray-400 mt-24">
-                    <p className="text-2xl font-medium text-gray-700 mb-2">
-                      Comment puis-je t'aider ?
-                    </p>
+                  <div className="text-center mt-24">
+                    <p className="text-2xl font-medium text-[#F5F1EB]">Comment puis-je t'aider ?</p>
                   </div>
                 )}
                 {messages.map((m) => (
@@ -85,7 +63,9 @@ export default function Home() {
                     key={m.id}
                     role={m.role as 'user' | 'assistant'}
                     content={m.content}
+                    reasoning={(m as any).reasoning}
                     toolInvocations={(m as any).toolInvocations}
+                    onOpenArtifact={setArtifact}
                   />
                 ))}
               </div>
@@ -100,9 +80,7 @@ export default function Home() {
             </div>
           </div>
 
-          {showArtifact && artifactCode && (
-            <ArtifactPanel code={artifactCode} onClose={() => setShowArtifact(false)} />
-          )}
+          <ArtifactPanel artifact={artifact} onClose={() => setArtifact(null)} />
         </div>
       </div>
     </div>
