@@ -1,7 +1,6 @@
 import { groq, SYSTEM_PROMPT } from '@/lib/groq';
 import { streamText } from 'ai';
 
-// On reste en edge pour la vitesse, mais on ajoute une gestion d'erreur robuste
 export const runtime = 'edge';
 export const maxDuration = 60;
 
@@ -9,11 +8,11 @@ export async function POST(req: Request) {
   let requestBody;
   try {
     requestBody = await req.json();
-    console.log('[chat] Requête reçue. Modèle demandé :', requestBody.model);
+    console.log("[chat] Requête reçue. Modèle demandé :", requestBody.model);
     
     if (!process.env.GROQ_API_KEY) {
-      console.error('[chat] ERREUR FATALE : GROQ_API_KEY est manquante dans l'environnement Vercel.');
-      throw new Error('Configuration serveur incomplète (clé API manquante).');
+      console.error("[chat] ERREUR FATALE : GROQ_API_KEY est manquante dans l'environnement Vercel.");
+      throw new Error("Configuration serveur incomplète (clé API manquante).");
     }
 
     const { messages, model } = requestBody;
@@ -29,11 +28,9 @@ export async function POST(req: Request) {
     return result.toDataStreamResponse();
 
   } catch (error) {
-    // L'erreur est catchée et loguée explicitement
-    console.error('[chat] ERREUR INTERCEPTÉE:', error instanceof Error ? error.message : error);
+    console.error("[chat] ERREUR INTERCEPTÉE:", error instanceof Error ? error.message : error);
     
-    // On renvoie une vraie erreur HTTP 500 avec un message clair
-    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+    const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { 
