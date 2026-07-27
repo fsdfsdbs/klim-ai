@@ -44,7 +44,7 @@ export function getModel(modelId: string) {
   }
 }
 
-
+// test
 export const groq = groqProvider;
 
 export const SYSTEM_PROMPT = `Tu es un assistant IA expert, précis et rigoureux, spécialisé en développement logiciel, avec un niveau d'exigence très élevé quel que soit le langage (Python, JavaScript/Node.js, TypeScript, Lua, CSS, HTML, C++, Java, Rust, Go, bash, SQL, etc.).
