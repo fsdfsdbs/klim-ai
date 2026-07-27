@@ -1,16 +1,8 @@
-// app/api/chat/route.ts — v2.0
+// app/api/chat/route.ts — v2.1 (sans dépendances externes)
 
 import { getModel, SYSTEM_PROMPT } from "@/lib/groq";
 import { tools } from "@/lib/tools";
 import { streamText, convertToCoreMessages, type CoreMessage, type Message } from "ai";
-import { z } from "zod";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/config";
-import { logger } from "@/lib/observability/logger";
-import { captureException } from "@/lib/observability/sentry";
-import { generateId } from "@/lib/utils/id";
 
 export const runtime = "edge";
 export const maxDuration = 60;
@@ -21,9 +13,9 @@ export const maxDuration = 60;
 
 interface Skill {
   name: string;
-  description: string;       // courte description pour l'affichage
-  trigger: string;           // mots-clés de déclenchement (issus du champ "Déclenchement")
-  content: string;           // instructions à injecter
+  description: string;
+  trigger: string;
+  content: string;
 }
 
 interface ChatRequestBody {
@@ -34,34 +26,14 @@ interface ChatRequestBody {
 }
 
 // ──────────────────────────────────────────────
-// Validation
+// Helpers (inline, zero dep)
 // ──────────────────────────────────────────────
 
-const ChatRequestSchema = z.object({
-  messages: z.array(z.any()).min(1),
-  model: z.string().optional().default("openai/gpt-oss-120b"),
-  skills: z.array(z.object({
-    name: z.string(),
-    description: z.string(),
-    trigger: z.string(),
-    content: z.string(),
-  })).optional().default([]),
-  conversationId: z.string().uuid().optional(),
-});
-
-// ──────────────────────────────────────────────
-// Rate limiter (optionnel, Redis)
-// ──────────────────────────────────────────────
-
-const ratelimit = (() => {
-  if (!process.env.UPSTASH_REDIS_REST_URL) return null;
-  return new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(40, "1 m"),
-    analytics: true,
-    prefix: "ratelimit:chat",
-  });
-})();
+/** Génère un ID court lisible (ex: "req_2aF8k3") */
+function generateId(prefix: string): string {
+  const rand = crypto.randomUUID().slice(0, 8);
+  return `${prefix}_${rand}`;
+}
 
 // ──────────────────────────────────────────────
 // Skills : matching par champ "trigger"
@@ -72,7 +44,6 @@ const MAX_HISTORY = 14;
 function buildSystemPrompt(
   allMessages: Message[],
   skills: Skill[],
-  conversationId?: string,
 ): string {
   try {
     const lastUserContent =
@@ -97,22 +68,19 @@ function buildSystemPrompt(
       .join("\n\n");
 
     return `${SYSTEM_PROMPT}\n\nSKILLS PERSONNALISÉS DÉCLENCHÉS POUR CETTE REQUÊTE :\n${skillsBlock}`;
-  } catch (err) {
-    logger.warn({ err }, "buildSystemPrompt fallback");
+  } catch {
     return SYSTEM_PROMPT;
   }
 }
 
 // ──────────────────────────────────────────────
-// Trimming intelligent (préserve les paires tool-call)
+// Trimming intelligent (préserve les paires)
 // ──────────────────────────────────────────────
 
 function trimMessages(messages: Message[]): Message[] {
   let trimmed =
     messages.length > MAX_HISTORY ? messages.slice(-MAX_HISTORY) : messages;
 
-  // Ne pas commencer par un tool result / assistant sans le user message
-  // qui a déclenché l'appel.
   while (trimmed.length > 1 && trimmed[0].role !== "user") {
     trimmed = trimmed.slice(1);
   }
@@ -124,11 +92,10 @@ function trimMessages(messages: Message[]): Message[] {
 // Retry avec backoff exponentiel
 // ──────────────────────────────────────────────
 
-const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
-
 function isRetryableError(error: unknown): boolean {
   if (error instanceof Error && "status" in error) {
-    return RETRYABLE_STATUS_CODES.has((error as any).status);
+    const status = (error as any).status;
+    if ([429, 500, 502, 503, 504].includes(status)) return true;
   }
   const msg = String(error ?? "");
   return /rate_limit|rate limit|429|too many requests|5\d{2}/i.test(msg);
@@ -145,7 +112,7 @@ async function withRetry<T>(
     } catch (error) {
       if (isRetryableError(error) && attempt < retries) {
         const delay = baseDelayMs * Math.pow(2, attempt); // 1s, 2s, 4s
-        logger.warn({ attempt, delay }, "Retry après erreur temporaire");
+        console.warn(`[retry] tentative ${attempt + 1}/${retries}, attente ${delay}ms`);
         await new Promise((r) => setTimeout(r, delay));
         continue;
       }
@@ -160,46 +127,31 @@ async function withRetry<T>(
 // ──────────────────────────────────────────────
 
 export async function POST(req: Request): Promise<Response> {
-  const requestId = generateId("req_");
+  const requestId = generateId("req");
   const startTime = Date.now();
 
   try {
-    // ── Auth (optionnel, décommente si tu veux) ──
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user?.id) {
-    //   return new Response(
-    //     JSON.stringify({ error: "Unauthorized", code: "UNAUTHORIZED" }),
-    //     { status: 401, headers: { "Content-Type": "application/json" } }
-    //   );
-    // }
-
-    // ── Rate limiting ──
-    // if (ratelimit && session?.user?.id) {
-    //   const { success, limit, remaining, reset } = await ratelimit.limit(session.user.id);
-    //   if (!success) {
-    //     return new Response(
-    //       JSON.stringify({ error: "Too many requests", code: "RATE_LIMITED", limit, remaining, reset }),
-    //       { status: 429, headers: { "Content-Type": "application/json", "X-RateLimit-Remaining": "0" } }
-    //     );
-    //   }
-    // }
-
-    // ── Validation ──
-    const body: unknown = await req.json();
-    const parsed = ChatRequestSchema.safeParse(body);
-
-    if (!parsed.success) {
+    // ── Validation minimale ──
+    let body: ChatRequestBody;
+    try {
+      body = await req.json();
+    } catch {
       return new Response(
-        JSON.stringify({
-          error: "Invalid request",
-          code: "VALIDATION_ERROR",
-          details: parsed.error.flatten(),
-        }),
+        JSON.stringify({ error: "Invalid JSON body", code: "PARSE_ERROR" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    const { messages: rawMessages, model, skills, conversationId } = parsed.data;
+    const rawMessages = body.messages;
+    if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "messages required", code: "VALIDATION_ERROR" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const model = body.model ?? "openai/gpt-oss-120b";
+    const skills = body.skills ?? [];
 
     // ── Trimming ──
     const trimmedMessages = trimMessages(rawMessages);
@@ -208,7 +160,7 @@ export async function POST(req: Request): Promise<Response> {
     const coreMessages: CoreMessage[] = convertToCoreMessages(trimmedMessages);
 
     // ── System prompt avec skills ──
-    const systemPrompt = buildSystemPrompt(rawMessages, skills, conversationId);
+    const systemPrompt = buildSystemPrompt(rawMessages, skills);
 
     // ── Streaming ──
     const result = await withRetry(async () =>
@@ -221,30 +173,27 @@ export async function POST(req: Request): Promise<Response> {
         maxTokens: model.toLowerCase().includes("deepseek") ? 12000 : 5500,
         temperature: 0.7,
         onError: (err) => {
-          logger.error({ err, requestId }, "streamText error");
+          console.error(`[streamText error] ${requestId}:`, err);
         },
       }),
     );
 
-    const response = result.toDataStreamResponse();
-
-    // Log de fin (asynchrone, ne bloque pas la réponse)
     const duration = Date.now() - startTime;
-    logger.info(
-      { requestId, model, duration, messageCount: rawMessages.length, conversationId },
-      "Chat request completed",
-    );
+    console.log(`[chat] ${requestId} — ${model} — ${duration}ms — ${rawMessages.length} messages`);
 
-    return response;
+    return result.toDataStreamResponse();
   } catch (error: any) {
     const message = error?.message ?? "Erreur de streaming";
     const status = error?.status ?? 500;
 
-    logger.error({ err: error, requestId }, "Chat API error");
-    captureException(error, { requestId });
+    console.error(`[chat] ERREUR ${requestId}:`, error?.message || error);
 
     return new Response(
-      JSON.stringify({ error: message, code: "INTERNAL_ERROR", requestId }),
+      JSON.stringify({
+        error: message,
+        code: "INTERNAL_ERROR",
+        requestId,
+      }),
       {
         status,
         headers: { "Content-Type": "application/json" },
