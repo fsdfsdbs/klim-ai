@@ -10,9 +10,7 @@ interface Props {
 }
 
 export default function ArtifactPanel({ artifact, onClose }: Props) {
-  const [tab, setTab] = useState<'code' | 'preview'>(
-    artifact?.language === 'html' ? 'preview' : 'code'
-  );
+const [tab, setTab] = useState<'code' | 'preview'>('code');
 
   if (!artifact) return null;
   const isHtml = artifact.language === 'html';
