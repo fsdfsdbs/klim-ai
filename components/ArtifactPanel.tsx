@@ -10,7 +10,8 @@ interface Props {
 }
 
 export default function ArtifactPanel({ artifact, onClose }: Props) {
-const [tab, setTab] = useState<'code' | 'preview'>('code');
+  const [tab, setTab] = useState<'code' | 'preview'>('code');
+  const [iframeKey, setIframeKey] = useState(0);
 
   if (!artifact) return null;
   const isHtml = artifact.language === 'html';
@@ -38,13 +39,25 @@ const [tab, setTab] = useState<'code' | 'preview'>('code');
             </button>
           )}
         </div>
-        <button onClick={onClose} className="text-[#8A8578] hover:text-[#F5F1EB]">
-          ✕
-        </button>
+        <div className="flex items-center gap-2">
+          {tab === 'preview' && isHtml && (
+            <button
+              onClick={() => setIframeKey((k) => k + 1)}
+              title="Recharger l'aperçu"
+              className="text-[#8A8578] hover:text-[#F5F1EB] text-xs px-2 py-1"
+            >
+              ↻ Recharger
+            </button>
+          )}
+          <button onClick={onClose} className="text-[#8A8578] hover:text-[#F5F1EB]">
+            ✕
+          </button>
+        </div>
       </div>
 
       {tab === 'preview' && isHtml ? (
         <iframe
+          key={iframeKey}
           srcDoc={artifact.code}
           sandbox="allow-scripts"
           className="flex-1 w-full bg-white"
