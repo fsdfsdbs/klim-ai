@@ -75,17 +75,18 @@ export async function POST(req: Request) {
     const coreMessages = convertToCoreMessages(trimmedMessages);
 
 const result = await withRetry(async () =>
-streamText({
-        model: getModel(model),
-        system: buildSystemPrompt(rawMessages, skills),
-        messages: coreMessages,
-        tools,
-        maxSteps: 5,
-        maxTokens: model?.includes('deepseek') ? 12000 : 5500,
-        temperature: 0.7,
-      })
+  streamText({
+    model: getModel(model),
+    system: buildSystemPrompt(rawMessages, skills),
+    messages: coreMessages,
+    tools,
+    maxSteps: 5,
+    maxTokens: model?.includes('deepseek') ? 12000 : 5500,
+    temperature: 0.7,
+  })
+);
 
-    return result.toDataStreamResponse();
+return result.toDataStreamResponse();
   } catch (error: any) {
     console.error('[chat] ERREUR:', error?.message || error);
     return new Response(
