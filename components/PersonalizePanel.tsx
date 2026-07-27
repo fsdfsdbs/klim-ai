@@ -68,7 +68,12 @@ export default function PersonalizePanel({ onClose }: Props) {
                       <p className="text-sm font-medium text-[#F5F1EB]">{s.name}</p>
                       <p className="text-xs text-[#8A8578] mt-0.5 line-clamp-2">{s.description}</p>
                     </div>
-                    <div className="flex gap-2 shrink-0">
+<div className="flex gap-2 shrink-0 items-center">
+                      {s.builtin && (
+                        <span className="text-[10px] bg-[#D97757]/15 text-[#D97757] px-2 py-0.5 rounded-full">
+                          Officiel
+                        </span>
+                      )}
                       <button
                         onClick={() => setEditing(s)}
                         className="text-xs text-[#B5AFA2] hover:text-[#F5F1EB] px-2 py-1"
