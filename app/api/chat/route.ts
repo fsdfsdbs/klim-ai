@@ -75,7 +75,7 @@ const result = await withRetry(async () =>
         messages: coreMessages,
         tools,
         maxSteps: 5,
-        maxTokens: 4500,
+        maxTokens: 5500,
         temperature: 0.7,
       })
     );
