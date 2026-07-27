@@ -18,6 +18,7 @@ function guessFilename(language: string): string {
     bash: 'script.sh',
     css: 'style.css',
     json: 'data.json',
+    lua: 'script.lua',
   };
   return map[language] || `fichier.${language || 'txt'}`;
 }
