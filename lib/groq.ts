@@ -1,6 +1,6 @@
 import { createGroq } from '@ai-sdk/groq';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { createOpenAI } from '@ai-sdk/openai';
+
 
 const groqProvider = createGroq({
   apiKey: process.env.GROQ_API_KEY,
@@ -18,26 +18,15 @@ export const AVAILABLE_MODELS = [
   { id: 'qwen/qwen3.6-27b', label: 'Qwen 3.6 27B — code + vision (Groq)', provider: 'groq' as const },
   { id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B — rapide (Groq)', provider: 'groq' as const },
   { id: 'deepseek/deepseek-v4-flash', label: 'DeepSeek V4 Flash (BazaarLink)', provider: 'bazaarlink' as const },
-  {
-  id: 'azure-openai/gpt-4.1',
-  label: 'GPT-4.1 (GitHub)',
-  provider: 'github' as const,
-},
 ];
 
 export function getModel(modelId: string) {
   const found = AVAILABLE_MODELS.find((m) => m.id === modelId);
+  const provider = found?.provider || 'groq';
 
-  switch (found?.provider) {
-    case 'github':
-      return github(modelId);
-
-    case 'bazaarlink':
-      return bazaarlink(modelId);
-
-    default:
-      return groqProvider(modelId);
-  }
+  return provider === 'bazaarlink'
+    ? bazaarlink(modelId)
+    : groqProvider(modelId);
 }
 
 // test
