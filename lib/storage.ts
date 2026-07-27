@@ -6,6 +6,7 @@ export interface SavedConversation {
 }
 
 const KEY = 'chat-conversations';
+const MAX_CONVERSATIONS = 30;
 
 export function loadConversations(): SavedConversation[] {
   if (typeof window === 'undefined') return [];
@@ -18,12 +19,21 @@ export function loadConversations(): SavedConversation[] {
 }
 
 export function saveConversation(conv: SavedConversation) {
-  const all = loadConversations().filter((c) => c.id !== conv.id);
-  all.unshift(conv);
-  localStorage.setItem(KEY, JSON.stringify(all.slice(0, 50)));
+  try {
+    const all = loadConversations().filter((c) => c.id !== conv.id);
+    all.unshift(conv);
+    localStorage.setItem(KEY, JSON.stringify(all.slice(0, MAX_CONVERSATIONS)));
+  } catch (e) {
+    // localStorage plein ou indisponible : on ignore plutôt que de faire planter l'app
+    console.warn('Impossible de sauvegarder la conversation:', e);
+  }
 }
 
 export function deleteConversation(id: string) {
-  const all = loadConversations().filter((c) => c.id !== id);
-  localStorage.setItem(KEY, JSON.stringify(all));
+  try {
+    const all = loadConversations().filter((c) => c.id !== id);
+    localStorage.setItem(KEY, JSON.stringify(all));
+  } catch (e) {
+    console.warn('Impossible de supprimer la conversation:', e);
+  }
 }
