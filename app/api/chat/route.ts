@@ -68,7 +68,7 @@ export async function POST(req: Request) {
 
     const coreMessages = convertToCoreMessages(trimmedMessages);
 
-    const result = await withRetry(() =>
+const result = await withRetry(async () =>
       streamText({
         model: groq(model),
         system: buildSystemPrompt(rawMessages, skills),
