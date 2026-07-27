@@ -31,12 +31,19 @@ export default function Home() {
       body: { model, skills: loadSkills() },
     });
 
-  useEffect(() => {
-    if (messages.length > 0) {
+useEffect(() => {
+    if (messages.length === 0) return;
+
+    // Debounce : on n'écrit dans localStorage qu'1 seconde après la dernière
+    // modification, pas à chaque token reçu pendant le streaming (sinon ça
+    // sature le thread principal et fait freezer/crasher l'onglet).
+    const timeout = setTimeout(() => {
       const title = messages[0]?.content?.slice(0, 40) || 'Nouvelle conversation';
       saveConversation({ id: chatId, title, messages, updatedAt: Date.now() });
       setRefreshKey((k) => k + 1);
-    }
+    }, 1000);
+
+    return () => clearTimeout(timeout);
   }, [messages, chatId]);
 
   const onNewChat = () => {
