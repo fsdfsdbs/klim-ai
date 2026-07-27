@@ -9,32 +9,27 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "14.2.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-
-"ai": "^4.3.0",
-"@ai-sdk/groq": "^1.2.0",
-"@ai-sdk/openai-compatible": "^0.1.0"
-
-    "groq-sdk": "^0.30.0",
-
-    "zod": "^3.25.76",
-    "react-markdown": "^9.1.0",
-    "remark-gfm": "^4.0.1",
-    "react-syntax-highlighter": "^15.6.1"
+    "next": "14.2.5",
+    "groq-sdk": "^0.5.0",
+    "ai": "^4.3.0",
+    "@ai-sdk/groq": "^1.2.0",
+    "@ai-sdk/openai-compatible": "^0.1.0",
+    "zod": "^3.23.8",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0",
+    "react-syntax-highlighter": "^15.5.0"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
-    "@types/node": "^22.15.30",
-    "@types/react": "^18.3.23",
-    "@types/react-dom": "^18.3.7",
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
     "@types/react-syntax-highlighter": "^15.5.13",
-
-    "eslint": "^8.57.1",
-    "eslint-config-next": "14.2.5",
-
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17"
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.5"
   }
 }
