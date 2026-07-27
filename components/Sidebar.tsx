@@ -12,158 +12,199 @@ interface Props {
 
 const Icon = {
   search: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
       <path d="M21 21l-4.3-4.3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   ),
+  panel: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M9 4v16" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  ),
   plus: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   ),
   chat: (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <path
-        d="M21 12c0 4.4-4 8-9 8-1.2 0-2.4-.2-3.5-.6L3 21l1.7-4.3C3.6 15.3 3 13.7 3 12c0-4.4 4-8 9-8s9 3.6 9 8Z"
+        d="M20 12c0 4-3.8 7-8.5 7-1 0-2-.1-2.9-.4L4 20l1.3-3.6C4.5 15.2 4 13.7 4 12c0-4 3.8-7 8.5-7S20 8 20 12Z"
         stroke="currentColor"
-        strokeWidth="1.8"
+        strokeWidth="1.7"
         strokeLinejoin="round"
       />
     </svg>
   ),
   folder: (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M4 8h16M4 8v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V8M4 8l1.5-3h13L20 8" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
     </svg>
   ),
-  spark: (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+  link: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <path
-        d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6L12 3Z"
+        d="M9.5 14.5 14.5 9.5M8 6.5 9.6 4.9a3 3 0 0 1 4.2 4.2L12.4 10.7M16 17.5 14.4 19.1a3 3 0 0 1-4.2-4.2l1.4-1.4"
         stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-    </svg>
-  ),
-  trash: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0-.8 12.2a2 2 0 0 1-2 1.8H9.8a2 2 0 0 1-2-1.8L7 7"
-        stroke="currentColor"
-        strokeWidth="1.6"
+        strokeWidth="1.7"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
+    </svg>
+  ),
+  code: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M9 8 4 12l5 4M15 8l5 4-5 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  briefcase: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="7" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  ),
+  sort: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+      <path d="M7 4v16M7 4l-3 3M7 4l3 3M17 20V4M17 20l3-3M17 20l-3-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  dots: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="5" cy="12" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="19" cy="12" r="1.8" />
+    </svg>
+  ),
+  download: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+      <path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  chevrons: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <path d="M8 10l4-4 4 4M8 14l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
 };
 
 export default function Sidebar({ onNewChat, onLoadChat, activeId, refreshKey }: Props) {
   const [conversations, setConversations] = useState<SavedConversation[]>([]);
-  const [search, setSearch] = useState('');
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   useEffect(() => {
     setConversations(loadConversations());
   }, [refreshKey]);
 
-  const filtered = conversations.filter((c) =>
-    c.title.toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
-    <aside className="w-[260px] bg-[#1C1C1A] border-r border-[#2B2B29] flex flex-col">
-      <div className="px-4 pt-5 pb-3">
-        <h1 className="text-lg font-semibold text-[#F5F5F3] tracking-tight px-1">Klim</h1>
-      </div>
-
-      <div className="px-3 mb-3">
-        <div className="flex items-center gap-2 bg-[#232220] border border-[#2E2C29] rounded-xl px-3 py-2 text-[#8F8F8A] focus-within:border-[#3D3934] transition">
-          {Icon.search}
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher..."
-            className="bg-transparent text-sm text-[#F5F5F3] placeholder-[#8F8F8A] outline-none flex-1"
-          />
+    <aside className="w-[260px] bg-[#161513] flex flex-col text-[#DDD9D0]">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-4 pt-5 pb-4">
+        <h1 className="font-serif-claude text-xl text-[#F5F5F3]">Klim</h1>
+        <div className="flex items-center gap-3 text-[#B5AFA2]">
+          <button className="hover:text-white transition">{Icon.search}</button>
+          <button className="hover:text-white transition">{Icon.panel}</button>
         </div>
       </div>
 
-      <div className="px-3 mb-2">
+      {/* New chat */}
+      <div className="px-3 mb-1">
         <button
           onClick={onNewChat}
-          className="w-full h-10 rounded-xl bg-[#D97757] hover:bg-[#C86A4B] text-white transition flex items-center gap-2 px-3 text-sm font-medium"
+          className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-[15px] text-[#EDEAE3] hover:bg-[#232220] transition"
         >
-          {Icon.plus}
+          <span className="w-6 h-6 rounded-full bg-[#3A3733] flex items-center justify-center shrink-0">
+            {Icon.plus}
+          </span>
           Nouvelle conversation
         </button>
       </div>
 
-      <nav className="px-3 mb-4 space-y-0.5">
-        <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[#B5AFA2] hover:bg-[#232220] hover:text-[#F5F5F3] transition">
-          <span className="text-[#8F8F8A]">{Icon.chat}</span>
-          Discussions
+      {/* Nav */}
+      <nav className="px-3 space-y-0.5 mb-4">
+        <button className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-[15px] text-[#B5AFA2] hover:bg-[#232220] hover:text-[#F5F5F3] transition">
+          {Icon.chat} Discussions
         </button>
-        <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[#B5AFA2] hover:bg-[#232220] hover:text-[#F5F5F3] transition">
-          <span className="text-[#8F8F8A]">{Icon.folder}</span>
-          Projets
+        <button className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-[15px] text-[#B5AFA2] hover:bg-[#232220] hover:text-[#F5F5F3] transition">
+          {Icon.folder} Projets
         </button>
-        <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[#B5AFA2] hover:bg-[#232220] hover:text-[#F5F5F3] transition">
-          <span className="text-[#8F8F8A]">{Icon.spark}</span>
-          Artéfacts
+        <button className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-[15px] text-[#B5AFA2] hover:bg-[#232220] hover:text-[#F5F5F3] transition">
+          {Icon.link} Artéfacts
+        </button>
+        <button className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-[15px] text-[#B5AFA2] hover:bg-[#232220] hover:text-[#F5F5F3] transition">
+          {Icon.code} Code
+        </button>
+        <button className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-[15px] text-[#B5AFA2] hover:bg-[#232220] hover:text-[#F5F5F3] transition">
+          {Icon.briefcase} Personnaliser
         </button>
       </nav>
 
+      {/* Récents */}
       <div className="flex-1 overflow-y-auto px-3">
-        <p className="text-xs font-medium text-[#6E6A62] px-2 mb-1.5 mt-1">Récents</p>
+        <div className="flex items-center justify-between px-2.5 mb-1.5">
+          <p className="text-xs text-[#6E6A62]">Récents</p>
+          <button className="text-[#6E6A62] hover:text-[#B5AFA2] transition">{Icon.sort}</button>
+        </div>
 
-        {filtered.length === 0 && (
-          <p className="text-xs text-[#6E6A62] px-2 py-2">Aucune conversation</p>
+        {conversations.length === 0 && (
+          <p className="text-xs text-[#6E6A62] px-2.5 py-2">Aucune conversation</p>
         )}
 
         <div className="space-y-0.5">
-          {filtered.map((c) => (
+          {conversations.map((c, i) => (
             <div
               key={c.id}
-              className={`group flex items-center rounded-lg transition ${
-                activeId === c.id ? 'bg-[#2A2825]' : 'hover:bg-[#232220]'
+              className={`group relative flex items-center rounded-lg transition ${
+                activeId === c.id ? 'bg-[#232220]' : 'hover:bg-[#1E1D1B]'
               }`}
             >
               <button
                 onClick={() => onLoadChat(c)}
-                className="flex-1 text-left px-3 py-2 text-sm truncate text-[#DDD9D0]"
+                className={`flex-1 text-left pl-2.5 pr-2 py-2 text-sm truncate ${
+                  i === 0 ? 'font-medium text-[#F5F5F3]' : 'text-[#B5AFA2]'
+                }`}
               >
                 {c.title}
               </button>
               <button
-                onClick={() => {
-                  deleteConversation(c.id);
-                  setConversations(loadConversations());
-                }}
-                className="opacity-0 group-hover:opacity-100 transition px-2 text-[#6E6A62] hover:text-red-400"
+                onClick={() => setOpenMenu(openMenu === c.id ? null : c.id)}
+                className="opacity-0 group-hover:opacity-100 transition px-2 text-[#8F8F8A] hover:text-white"
               >
-                {Icon.trash}
+                {Icon.dots}
               </button>
+              {openMenu === c.id && (
+                <div className="absolute right-0 top-9 z-10 bg-[#2A2825] border border-[#3D3934] rounded-lg shadow-xl py-1 w-40">
+                  <button
+                    onClick={() => {
+                      deleteConversation(c.id);
+                      setConversations(loadConversations());
+                      setOpenMenu(null);
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-[#332F2B] transition"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
       </div>
 
-      <div className="border-t border-[#2B2B29] p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#3A3A37] flex items-center justify-center text-sm text-white shrink-0">
+      {/* Profile */}
+      <div className="p-3 mt-2">
+        <div className="flex items-center gap-3 px-1 py-1">
+          <div className="w-8 h-8 rounded-full bg-[#5B5750] flex items-center justify-center text-sm text-white shrink-0">
             K
           </div>
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-sm text-[#F5F5F3] truncate">Utilisateur</span>
+          <div className="flex flex-col overflow-hidden flex-1">
+            <span className="text-sm text-[#F5F5F3] truncate">klim</span>
             <span className="text-xs text-[#6E6A62]">Plan gratuit</span>
           </div>
+          <button className="w-8 h-8 rounded-lg border border-[#33302B] flex items-center justify-center text-[#8F8F8A] hover:text-white transition">
+            {Icon.download}
+          </button>
+          <button className="text-[#8F8F8A] hover:text-white transition">{Icon.chevrons}</button>
         </div>
       </div>
     </aside>
