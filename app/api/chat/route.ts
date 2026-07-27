@@ -1,4 +1,4 @@
-import { groq, SYSTEM_PROMPT } from '@/lib/groq';
+import { getModel, SYSTEM_PROMPT } from '@/lib/groq';
 import { tools } from '@/lib/tools';
 import { streamText, convertToCoreMessages } from 'ai';
 
@@ -69,8 +69,8 @@ export async function POST(req: Request) {
     const coreMessages = convertToCoreMessages(trimmedMessages);
 
 const result = await withRetry(async () =>
-      streamText({
-        model: groq(model),
+streamText({
+        model: getModel(model),
         system: buildSystemPrompt(rawMessages, skills),
         messages: coreMessages,
         tools,
