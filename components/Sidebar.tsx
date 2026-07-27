@@ -8,6 +8,7 @@ interface Props {
   onLoadChat: (conv: SavedConversation) => void;
   activeId: string | null;
   refreshKey: number;
+  onOpenPersonalize: () => void;
 }
 
 const Icon = {
@@ -88,7 +89,7 @@ const Icon = {
   ),
 };
 
-export default function Sidebar({ onNewChat, onLoadChat, activeId, refreshKey }: Props) {
+export default function Sidebar({ onNewChat, onLoadChat, activeId, refreshKey, onOpenPersonalize }: Props) {
   const [conversations, setConversations] = useState<SavedConversation[]>([]);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
@@ -134,7 +135,10 @@ export default function Sidebar({ onNewChat, onLoadChat, activeId, refreshKey }:
         <button className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-[15px] text-[#B5AFA2] hover:bg-[#232220] hover:text-[#F5F5F3] transition">
           {Icon.code} Code
         </button>
-        <button className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-[15px] text-[#B5AFA2] hover:bg-[#232220] hover:text-[#F5F5F3] transition">
+<button
+          onClick={onOpenPersonalize}
+          className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-[15px] text-[#B5AFA2] hover:bg-[#232220] hover:text-[#F5F5F3] transition"
+        >
           {Icon.briefcase} Personnaliser
         </button>
       </nav>
