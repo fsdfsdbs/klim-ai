@@ -13,7 +13,7 @@ interface Props {
   toolInvocations?: any[];
   parts?: any[];
   experimental_attachments?: { url: string; contentType?: string }[];
-  onOpenArtifact: (artifact: { language: string; code: string }) => void;
+  onOpenArtifact: (artifact: { language: string; code: string; siblings?: { language: string; code: string }[] }) => void;
   onEditMessage: (id: string, newContent: string) => void;
   onRegenerate: () => void;
   isLast: boolean;
