@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import ArtifactCard from './ArtifactCard';
@@ -24,6 +24,36 @@ const TOOL_LABELS: Record<string, string> = {
   web_search: 'Recherche web en cours…',
 };
 
+// Throttle : ne met à jour la valeur affichée qu'au maximum toutes les `delay` ms.
+// Évite de re-render tout le markdown à chaque token reçu pendant le streaming.
+function useThrottledValue<T>(value: T, delay: number): T {
+  const [throttled, setThrottled] = useState(value);
+  const lastUpdate = useRef(Date.now());
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const now = Date.now();
+    const remaining = delay - (now - lastUpdate.current);
+
+    if (remaining <= 0) {
+      lastUpdate.current = now;
+      setThrottled(value);
+    } else {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        lastUpdate.current = Date.now();
+        setThrottled(value);
+      }, remaining);
+    }
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [value, delay]);
+
+  return throttled;
+}
+
 function parseSegments(content: string) {
   const regex = /```(\w+)?\n([\s\S]*?)```/g;
   const segments: { type: 'text' | 'code'; content: string; language?: string }[] = [];
@@ -37,6 +67,8 @@ function parseSegments(content: string) {
     lastIndex = regex.lastIndex;
   }
   if (lastIndex < content.length) {
+    // Bloc de code en cours de génération (pas encore fermé par ```) :
+    // on l'affiche comme un texte brut simple pour éviter de casser le markdown pendant le stream.
     segments.push({ type: 'text', content: content.slice(lastIndex) });
   }
   return segments;
@@ -80,8 +112,11 @@ export default function ChatMessage({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(content);
 
+  // On throttle uniquement l'affichage des messages assistant (le streaming vient d'eux)
+  const displayedContent = useThrottledValue(content, isUser ? 0 : 150);
+
   const pendingTools = extractPendingTools(toolInvocations, parts);
-  const segments = parseSegments(content || '');
+  const segments = parseSegments(displayedContent || '');
 
   if (isUser) {
     return (
@@ -173,7 +208,7 @@ export default function ChatMessage({
         </div>
       ))}
 
-      {content && (
+      {displayedContent && (
         <>
           <div className="prose-invert text-[#EDEAE3] text-[15px]">
             {segments.map((seg, i) =>
