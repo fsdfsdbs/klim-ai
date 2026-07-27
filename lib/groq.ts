@@ -12,21 +12,38 @@ const bazaarlink = createOpenAICompatible({
   apiKey: process.env.BAZAARLINK_API_KEY,
 });
 
+const cerebras = createOpenAICompatible({
+  name: 'cerebras',
+  baseURL: 'https://api.cerebras.ai/v1',
+  apiKey: process.env.CEREBRAS_API_KEY,
+});
 
 export const AVAILABLE_MODELS = [
   { id: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B (Groq)', provider: 'groq' as const },
   { id: 'qwen/qwen3.6-27b', label: 'Qwen 3.6 27B — code + vision (Groq)', provider: 'groq' as const },
   { id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B — rapide (Groq)', provider: 'groq' as const },
   { id: 'deepseek/deepseek-v4-flash', label: 'DeepSeek V4 Flash (BazaarLink)', provider: 'bazaarlink' as const },
+  {
+  id: 'zai-glm-4.7',
+  label: 'GLM 4.7 (Cerebras)',
+  provider: 'cerebras' as const,
+},
 ];
 
 export function getModel(modelId: string) {
   const found = AVAILABLE_MODELS.find((m) => m.id === modelId);
   const provider = found?.provider || 'groq';
 
-  return provider === 'bazaarlink'
-    ? bazaarlink(modelId)
-    : groqProvider(modelId);
+  switch (provider) {
+    case 'bazaarlink':
+      return bazaarlink(modelId);
+
+    case 'cerebras':
+      return cerebras(modelId);
+
+    default:
+      return groqProvider(modelId);
+  }
 }
 
 // test
