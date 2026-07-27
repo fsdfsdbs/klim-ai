@@ -57,10 +57,9 @@ export default function Home() {
       <div className="flex-1 flex min-w-0">
         <div className="flex-1 flex flex-col min-w-0">
           {isEmpty ? (
-            // Écran d'accueil centré, façon Claude.ai
             <div className="flex-1 flex flex-col items-center justify-center px-6">
               <div className="w-full max-w-2xl">
-                <h1 className="text-3xl font-semibold text-[#F5F1EB] text-center mb-8">
+                <h1 className="font-serif-claude text-4xl text-[#F5F1EB] text-center mb-8">
                   Comment puis-je t'aider ?
                 </h1>
                 <ChatInput
