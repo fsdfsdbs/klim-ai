@@ -75,10 +75,9 @@ streamText({
         messages: coreMessages,
         tools,
         maxSteps: 5,
-        maxTokens: 5500,
+        maxTokens: model?.includes('deepseek') ? 12000 : 5500,
         temperature: 0.7,
       })
-    );
 
     return result.toDataStreamResponse();
   } catch (error: any) {
