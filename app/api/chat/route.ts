@@ -170,7 +170,7 @@ export async function POST(req: Request): Promise<Response> {
         messages: coreMessages,
         tools,
         maxSteps: 5,
-        maxTokens: model.toLowerCase().includes("deepseek") ? 12000 : 5500,
+        maxTokens: model.toLowerCase().includes("deepseek") ? 12000 : 6200,
         temperature: 0.7,
         onError: (err) => {
           console.error(`[streamText error] ${requestId}:`, err);
