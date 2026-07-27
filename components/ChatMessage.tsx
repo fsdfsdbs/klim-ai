@@ -211,7 +211,7 @@ export default function ChatMessage({
       {displayedContent && (
         <>
           <div className="prose-invert text-[#EDEAE3] text-[15px]">
-            {segments.map((seg, i) =>
+{segments.map((seg, i) =>
               seg.type === 'text' ? (
                 <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>
                   {seg.content}
@@ -221,7 +221,15 @@ export default function ChatMessage({
                   key={i}
                   language={seg.language || 'text'}
                   code={seg.content}
-                  onClick={() => onOpenArtifact({ language: seg.language || 'text', code: seg.content })}
+                  onClick={() =>
+                    onOpenArtifact({
+                      language: seg.language || 'text',
+                      code: seg.content,
+                      siblings: segments
+                        .filter((s) => s.type === 'code')
+                        .map((s) => ({ language: s.language || 'text', code: s.content })),
+                    })
+                  }
                 />
               )
             )}
