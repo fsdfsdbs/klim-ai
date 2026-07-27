@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Fragment } from 'react';
+import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import ArtifactCard from './ArtifactCard';
@@ -47,59 +47,63 @@ export default function ChatMessage({ role, content, reasoning, toolInvocations,
   const pendingTools = (toolInvocations || []).filter((t) => t.state !== 'result');
   const segments = parseSegments(content || '');
 
-  return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-6`}>
-      <div className={`max-w-[85%] ${isUser ? '' : 'w-full'}`}>
-        {reasoning && (
-          <div className="mb-2">
-            <button
-              onClick={() => setShowThinking((s) => !s)}
-              className="flex items-center gap-2 text-sm text-[#8A8578] hover:text-[#D97757] transition"
-            >
-              <span className="w-2 h-2 rounded-full bg-[#D97757]" />
-              {showThinking ? 'Masquer le raisonnement' : 'Thinking...'}
-            </button>
-            {showThinking && (
-              <div className="mt-2 text-sm text-[#8A8578] border-l-2 border-[#3D3934] pl-3 whitespace-pre-wrap">
-                {reasoning}
-              </div>
-            )}
-          </div>
-        )}
-
-        {pendingTools.map((t, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-2 text-sm text-[#8A8578] mb-2 px-4 py-2 bg-[#2A2825] rounded-xl border border-[#3D3934] w-fit"
-          >
-            <span className="w-2 h-2 rounded-full bg-[#D97757] animate-pulse" />
-            {TOOL_LABELS[t.toolName] || 'Outil en cours…'}
-          </div>
-        ))}
-
-        {content && (
-          <div
-            className={`rounded-2xl px-4 py-3 ${
-              isUser ? 'bg-[#D97757] text-white ml-auto w-fit' : 'text-[#F5F1EB]'
-            }`}
-          >
-            {segments.map((seg, i) =>
-              seg.type === 'text' ? (
-                <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>
-                  {seg.content}
-                </ReactMarkdown>
-              ) : (
-                <ArtifactCard
-                  key={i}
-                  language={seg.language || 'text'}
-                  code={seg.content}
-                  onClick={() => onOpenArtifact({ language: seg.language || 'text', code: seg.content })}
-                />
-              )
-            )}
-          </div>
-        )}
+  if (isUser) {
+    return (
+      <div className="flex justify-end mb-6">
+        <div className="max-w-[80%] bg-[#D97757] text-white rounded-2xl px-4 py-2.5 text-[15px]">
+          {content}
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="mb-8">
+      {reasoning && (
+        <div className="mb-3">
+          <button
+            onClick={() => setShowThinking((s) => !s)}
+            className="flex items-center gap-2 text-sm text-[#8A8578] hover:text-[#D97757] transition"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#D97757]" />
+            {showThinking ? 'Masquer le raisonnement' : 'Thinking...'}
+          </button>
+          {showThinking && (
+            <div className="mt-2 text-sm text-[#8A8578] border-l-2 border-[#33302B] pl-3 whitespace-pre-wrap">
+              {reasoning}
+            </div>
+          )}
+        </div>
+      )}
+
+      {pendingTools.map((t, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-2 text-sm text-[#8A8578] mb-3 px-4 py-2 bg-[#232220] rounded-xl border border-[#33302B] w-fit"
+        >
+          <span className="w-2 h-2 rounded-full bg-[#D97757] animate-pulse" />
+          {TOOL_LABELS[t.toolName] || 'Outil en cours…'}
+        </div>
+      ))}
+
+      {content && (
+        <div className="prose-invert text-[#EDEAE3] text-[15px]">
+          {segments.map((seg, i) =>
+            seg.type === 'text' ? (
+              <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>
+                {seg.content}
+              </ReactMarkdown>
+            ) : (
+              <ArtifactCard
+                key={i}
+                language={seg.language || 'text'}
+                code={seg.content}
+                onClick={() => onOpenArtifact({ language: seg.language || 'text', code: seg.content })}
+              />
+            )
+          )}
+        </div>
+      )}
     </div>
   );
 }
