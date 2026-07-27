@@ -7,6 +7,8 @@ import ChatInput from '@/components/ChatInput';
 import Sidebar from '@/components/Sidebar';
 import ArtifactPanel from '@/components/ArtifactPanel';
 import { saveConversation, SavedConversation } from '@/lib/storage';
+import { loadSkills } from '@/lib/skills';
+import PersonalizePanel from '@/components/PersonalizePanel';
 
 const SUGGESTIONS = [
   'Écris une fonction Python de tri rapide',
@@ -20,12 +22,13 @@ export default function Home() {
   const [chatId, setChatId] = useState<string>(() => crypto.randomUUID());
   const [refreshKey, setRefreshKey] = useState(0);
   const [artifact, setArtifact] = useState<{ language: string; code: string } | null>(null);
+  const [showPersonalize, setShowPersonalize] = useState(false);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, setInput } =
-    useChat({
+useChat({
       api: '/api/chat',
       id: chatId,
-      body: { model },
+      body: { model, skills: loadSkills() },
     });
 
   useEffect(() => {
@@ -52,7 +55,14 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-[#1A1917]">
-      <Sidebar onNewChat={onNewChat} onLoadChat={onLoadChat} activeId={chatId} refreshKey={refreshKey} />
+      <Sidebar
+        onNewChat={onNewChat}
+        onLoadChat={onLoadChat}
+        activeId={chatId}
+        refreshKey={refreshKey}
+        onOpenPersonalize={() => setShowPersonalize(true)}
+      />
+      {showPersonalize && <PersonalizePanel onClose={() => setShowPersonalize(false)} />}
 
       <div className="flex-1 flex min-w-0">
         <div className="flex-1 flex flex-col min-w-0">
