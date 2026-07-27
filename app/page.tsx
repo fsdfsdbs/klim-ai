@@ -21,7 +21,7 @@ export default function Home() {
   const [model, setModel] = useState('openai/gpt-oss-120b');
   const [chatId, setChatId] = useState<string>(() => crypto.randomUUID());
   const [refreshKey, setRefreshKey] = useState(0);
-  const [artifact, setArtifact] = useState<{ language: string; code: string } | null>(null);
+  const [artifact, setArtifact] = useState<{ language: string; code: string; siblings?: { language: string; code: string }[] } | null>(null);
   const [showPersonalize, setShowPersonalize] = useState(false);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, setInput, reload } =
