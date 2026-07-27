@@ -6,9 +6,9 @@ import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
 import Sidebar from '@/components/Sidebar';
 import ArtifactPanel from '@/components/ArtifactPanel';
+import PersonalizePanel from '@/components/PersonalizePanel';
 import { saveConversation, SavedConversation } from '@/lib/storage';
 import { loadSkills } from '@/lib/skills';
-import PersonalizePanel from '@/components/PersonalizePanel';
 
 const SUGGESTIONS = [
   'Écris une fonction Python de tri rapide',
@@ -24,8 +24,8 @@ export default function Home() {
   const [artifact, setArtifact] = useState<{ language: string; code: string } | null>(null);
   const [showPersonalize, setShowPersonalize] = useState(false);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, setInput } =
-useChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, setInput, reload } =
+    useChat({
       api: '/api/chat',
       id: chatId,
       body: { model, skills: loadSkills() },
@@ -51,7 +51,21 @@ useChat({
     setArtifact(null);
   };
 
+  const onEditMessage = (id: string, newContent: string) => {
+    const index = messages.findIndex((m) => m.id === id);
+    if (index === -1) return;
+    const updated = messages.slice(0, index + 1);
+    updated[index] = { ...updated[index], content: newContent };
+    setMessages(updated);
+    reload({ body: { model, skills: loadSkills() } });
+  };
+
+  const onRegenerate = () => {
+    reload({ body: { model, skills: loadSkills() } });
+  };
+
   const isEmpty = messages.length === 0;
+  const lastAssistantId = [...messages].reverse().find((m) => m.role === 'assistant')?.id;
 
   return (
     <div className="flex h-screen bg-[#1A1917]">
@@ -100,11 +114,17 @@ useChat({
                   {messages.map((m) => (
                     <ChatMessage
                       key={m.id}
+                      id={m.id}
                       role={m.role as 'user' | 'assistant'}
                       content={m.content}
                       reasoning={(m as any).reasoning}
                       toolInvocations={(m as any).toolInvocations}
+                      parts={(m as any).parts}
+                      experimental_attachments={(m as any).experimental_attachments}
                       onOpenArtifact={setArtifact}
+                      onEditMessage={onEditMessage}
+                      onRegenerate={onRegenerate}
+                      isLast={m.id === lastAssistantId}
                     />
                   ))}
                   {isLoading && messages[messages.length - 1]?.role === 'user' && (
