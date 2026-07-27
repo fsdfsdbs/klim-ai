@@ -12,10 +12,6 @@ const bazaarlink = createOpenAICompatible({
   apiKey: process.env.BAZAARLINK_API_KEY,
 });
 
-const github = createOpenAI({
-  apiKey: process.env.GITHUB_TOKEN,
-  baseURL: 'https://models.github.ai/inference',
-});
 
 export const AVAILABLE_MODELS = [
   { id: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B (Groq)', provider: 'groq' as const },
