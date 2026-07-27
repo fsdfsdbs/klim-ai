@@ -1,5 +1,6 @@
 import { createGroq } from '@ai-sdk/groq';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { createOpenAI } from '@ai-sdk/openai';
 
 const groqProvider = createGroq({
   apiKey: process.env.GROQ_API_KEY,
