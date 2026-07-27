@@ -63,8 +63,14 @@ export async function POST(req: Request) {
     const model = body?.model || 'openai/gpt-oss-120b';
     const skills = body?.skills || [];
 
-    const trimmedMessages =
+   let trimmedMessages =
       rawMessages.length > MAX_HISTORY ? rawMessages.slice(-MAX_HISTORY) : rawMessages;
+
+    // Évite de couper au milieu d'un échange (appel d'outil sans son message
+    // utilisateur de départ), ce qui casserait le format attendu par l'API.
+    while (trimmedMessages.length > 1 && trimmedMessages[0].role !== 'user') {
+      trimmedMessages = trimmedMessages.slice(1);
+    }
 
     const coreMessages = convertToCoreMessages(trimmedMessages);
 
