@@ -79,8 +79,18 @@ const matchedSkills = skills.filter((s) => {
 // ──────────────────────────────────────────────
 
 function trimMessages(messages: Message[]): Message[] {
+  // On retire d'abord tout message assistant "cassé" : vide, sans contenu
+  // ET sans appel d'outil en cours. Ça arrive après une génération interrompue
+  // et ça fait planter silencieusement la requête suivante.
+  const cleaned = messages.filter((m) => {
+    if (m.role !== 'assistant') return true;
+    const hasContent = !!m.content?.trim();
+    const hasToolInvocations = !!(m as any).toolInvocations?.length;
+    return hasContent || hasToolInvocations;
+  });
+
   let trimmed =
-    messages.length > MAX_HISTORY ? messages.slice(-MAX_HISTORY) : messages;
+    cleaned.length > MAX_HISTORY ? cleaned.slice(-MAX_HISTORY) : cleaned;
 
   while (trimmed.length > 1 && trimmed[0].role !== "user") {
     trimmed = trimmed.slice(1);
