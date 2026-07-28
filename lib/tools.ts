@@ -78,4 +78,62 @@ export const tools = {
       }
     },
   }),
+
+  fetch_github: tool({
+    description:
+      "Récupère le contenu d'un fichier ou la liste des fichiers d'un dossier depuis un lien GitHub (blob, tree, ou juste le repo). Utilise ça dès que l'utilisateur colle une URL github.com.",
+    parameters: z.object({
+      url: z.string().describe('URL GitHub (fichier, dossier, ou repo)'),
+    }),
+    execute: async ({ url }) => {
+      try {
+        const match = url.match(
+          /github\.com\/([^/]+)\/([^/]+)(?:\/(blob|tree)\/([^/]+)\/(.*))?/
+        );
+        if (!match) return { error: "URL GitHub non reconnue." };
+
+        const [, owner, repo, type, branch, path = ''] = match;
+        const cleanRepo = repo.replace(/\.git$/, '');
+
+        if (type === 'blob') {
+          // Fichier précis : on récupère le contenu brut
+          const rawUrl = `https://raw.githubusercontent.com/${owner}/${cleanRepo}/${branch}/${path}`;
+          const res = await fetch(rawUrl);
+          if (!res.ok) return { error: `Fichier introuvable (${res.status}).` };
+          const content = await res.text();
+          return {
+            type: 'file',
+            path,
+            content: content.slice(0, 15000), // sécurité anti-token-explosion
+            truncated: content.length > 15000,
+          };
+        }
+
+        // Dossier ou racine du repo : on liste le contenu via l'API GitHub
+        const apiUrl = `https://api.github.com/repos/${owner}/${cleanRepo}/contents/${path || ''}${
+          branch ? `?ref=${branch}` : ''
+        }`;
+        const res = await fetch(apiUrl, {
+          headers: { Accept: 'application/vnd.github.v3+json' },
+        });
+        if (!res.ok) return { error: `Dossier introuvable (${res.status}).` };
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
+          return { error: "Ce n'est pas un dossier valide." };
+        }
+
+        return {
+          type: 'directory',
+          entries: data.map((item: any) => ({
+            name: item.name,
+            path: item.path,
+            type: item.type, // 'file' ou 'dir'
+          })),
+        };
+      } catch (e) {
+        return { error: "Erreur lors de la récupération depuis GitHub." };
+      }
+    },
+  }),
 };
