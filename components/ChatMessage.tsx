@@ -15,8 +15,10 @@ interface Props {
   experimental_attachments?: { url: string; contentType?: string }[];
   onOpenArtifact: (artifact: { language: string; code: string; siblings?: { language: string; code: string }[] }) => void;
   onEditMessage: (id: string, newContent: string) => void;
-  onRegenerate: () => void;
+onRegenerate: () => void;
+  onContinue: () => void;
   isLast: boolean;
+  isTruncated?: boolean;
 }
 
 const TOOL_LABELS: Record<string, string> = {
@@ -105,8 +107,10 @@ export default function ChatMessage({
   experimental_attachments,
   onOpenArtifact,
   onEditMessage,
-  onRegenerate,
+onRegenerate,
+  onContinue,
   isLast,
+  isTruncated,
 }: Props) {
   const isUser = role === 'user';
   const [showThinking, setShowThinking] = useState(false);
@@ -235,10 +239,19 @@ export default function ChatMessage({
               )
             )}
           </div>
+{isLast && isTruncated && (
+            <button
+              onClick={onContinue}
+              className="mt-2 flex items-center gap-1.5 text-xs bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] rounded-lg px-3 py-1.5 transition"
+            >
+              ↳ Continuer la génération
+            </button>
+          )}
+
           {isLast && (
             <button
               onClick={onRegenerate}
-              className="opacity-0 group-hover:opacity-100 transition text-xs text-[#6E6A62] hover:text-[#D97757] mt-2 flex items-center gap-1.5"
+              className="opacity-0 group-hover:opacity-100 transition text-xs text-[#6E6A62] hover:text-[#D97757] mt-2 ml-2 inline-flex items-center gap-1.5"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                 <path
