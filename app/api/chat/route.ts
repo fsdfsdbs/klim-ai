@@ -52,13 +52,14 @@ function buildSystemPrompt(
         .find((m): m is Message & { role: "user" } => m.role === "user")
         ?.content?.toLowerCase() ?? "";
 
-    const matchedSkills = skills.filter((s) => {
-      if (!s.trigger) return false;
-      const keywords = s.trigger
+const matchedSkills = skills.filter((s) => {
+      const triggerText = s.trigger || (s as any).description;
+      if (!triggerText) return false;
+      const keywords = triggerText
         .toLowerCase()
         .split(/[\s,;]+/)
-        .filter((w) => w.length > 2);
-      return keywords.some((k) => lastUserContent.includes(k));
+        .filter((w: string) => w.length > 2);
+      return keywords.some((k: string) => lastUserContent.includes(k));
     });
 
     if (matchedSkills.length === 0) return SYSTEM_PROMPT;
