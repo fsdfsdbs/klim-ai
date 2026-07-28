@@ -79,7 +79,7 @@ export async function POST(req: Request): Promise<Response> {
       messages: coreMessages,
       tools,
       maxSteps: 2, // Limite les boucles d'outils pour économiser les tokens
-      maxTokens: 3500, // Ajusté pour ne pas exploser le quota TPM de Groq
+      maxTokens: 8000, // Assez large pour un site HTML complet en un seul bloc
       temperature: 0.7,
     });
 

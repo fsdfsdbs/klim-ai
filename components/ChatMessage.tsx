@@ -64,8 +64,17 @@ function parseSegments(content: string) {
     segments.push({ type: 'code', content: match[2], language: match[1] || 'text' });
     lastIndex = regex.lastIndex;
   }
-  if (lastIndex < content.length) {
-    segments.push({ type: 'text', content: content.slice(lastIndex) });
+  // Reste du contenu après le dernier bloc fermé.
+  const rest = content.slice(lastIndex);
+  // Gère un bloc de code OUVERT mais pas encore fermé (streaming / réponse tronquée).
+  const openFence = rest.match(/```(\w+)?\n([\s\S]*)$/);
+  if (openFence) {
+    if ((openFence.index ?? 0) > 0) {
+      segments.push({ type: 'text', content: rest.slice(0, openFence.index) });
+    }
+    segments.push({ type: 'code', content: openFence[2], language: openFence[1] || 'text' });
+  } else if (rest.length > 0) {
+    segments.push({ type: 'text', content: rest });
   }
   return segments;
 }
