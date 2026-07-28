@@ -79,7 +79,7 @@ export async function POST(req: Request): Promise<Response> {
       messages: coreMessages,
       tools,
       maxSteps: 5, // Permet plus d'itérations d'outils pour les tâches complexes
-      maxTokens: 8192, // Maximum supporté par la plupart des modèles
+      maxTokens: 4096, // Limite raisonnable compatible avec la majorité des modèles Groq (Llama 3.1 8B/70B, Mixtral, etc.)
       temperature: 0.7,
     });
 
