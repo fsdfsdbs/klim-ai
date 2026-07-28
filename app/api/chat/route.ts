@@ -150,14 +150,15 @@ export async function POST(req: Request): Promise<Response> {
     const coreMessages: CoreMessage[] = convertToCoreMessages(trimmedMessages);
     const systemPrompt = buildSystemPrompt(rawMessages, skills);
 
+    // Augmentation de la capacité de réponse max pour les gros fichiers HTML (8192 tokens)
     const result = await withRetry(async () =>
       streamText({
         model: getModel(model),
         system: systemPrompt,
         messages: coreMessages,
         tools,
-        maxSteps: 5,
-        maxTokens: model.toLowerCase().includes("deepseek") ? 12000 : model.toLowerCase().includes("cerebras") || model.includes("glm") ? 8000 : 4500,
+        maxSteps: 3,
+        maxTokens: model.toLowerCase().includes("deepseek") ? 12000 : 8192,
         temperature: 0.7,
         onError: (err) => {
           console.error(`[streamText error] ${requestId}:`, err);
