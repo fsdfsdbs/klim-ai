@@ -15,7 +15,7 @@ interface Props {
   experimental_attachments?: { url: string; contentType?: string }[];
   onOpenArtifact: (artifact: { language: string; code: string; siblings?: { language: string; code: string }[] }) => void;
   onEditMessage: (id: string, newContent: string) => void;
-onRegenerate: () => void;
+  onRegenerate: () => void;
   onContinue: () => void;
   isLast: boolean;
   isTruncated?: boolean;
@@ -27,12 +27,11 @@ const TOOL_LABELS: Record<string, string> = {
   fetch_github: 'Lecture du dépôt GitHub en cours…',
 };
 
-// Throttle : ne met à jour la valeur affichée qu'au maximum toutes les `deay` ms.
-// Évite de re-render tout le markdown à chaque token reçu pendant le streaming.
 function useThrottledValue<T>(value: T, delay: number): T {
   const [throttled, setThrottled] = useState(value);
   const lastUpdate = useRef(Date.now());
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const valueRef = useRef(value);
+  valueRef.current = value;
 
   useEffect(() => {
     const now = Date.now();
@@ -42,16 +41,12 @@ function useThrottledValue<T>(value: T, delay: number): T {
       lastUpdate.current = now;
       setThrottled(value);
     } else {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => {
+      const timer = setTimeout(() => {
         lastUpdate.current = Date.now();
-        setThrottled(value);
+        setThrottled(valueRef.current);
       }, remaining);
+      return () => clearTimeout(timer);
     }
-
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
   }, [value, delay]);
 
   return throttled;
@@ -70,8 +65,6 @@ function parseSegments(content: string) {
     lastIndex = regex.lastIndex;
   }
   if (lastIndex < content.length) {
-    // Bloc de code en cours de génération (pas encore fermé par ```) :
-    // on l'affiche comme un texte brut simple pour éviter de casser le markdown pendant le stream.
     segments.push({ type: 'text', content: content.slice(lastIndex) });
   }
   return segments;
@@ -107,7 +100,7 @@ export default function ChatMessage({
   experimental_attachments,
   onOpenArtifact,
   onEditMessage,
-onRegenerate,
+  onRegenerate,
   onContinue,
   isLast,
   isTruncated,
@@ -117,7 +110,6 @@ onRegenerate,
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(content);
 
-  // On throttle uniquement l'affichage des messages assistant (le streaming vient d'eux)
   const displayedContent = useThrottledValue(content, isUser ? 0 : 150);
 
   const pendingTools = extractPendingTools(toolInvocations, parts);
@@ -216,7 +208,7 @@ onRegenerate,
       {displayedContent && (
         <>
           <div className="prose-invert text-[#EDEAE3] text-[15px]">
-{segments.map((seg, i) =>
+            {segments.map((seg, i) =>
               seg.type === 'text' ? (
                 <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>
                   {seg.content}
@@ -239,7 +231,8 @@ onRegenerate,
               )
             )}
           </div>
-{isLast && isTruncated && (
+
+          {isLast && isTruncated && (
             <button
               onClick={onContinue}
               className="mt-2 flex items-center gap-1.5 text-xs bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] rounded-lg px-3 py-1.5 transition"
