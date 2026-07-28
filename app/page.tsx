@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from 'ai/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
 import Sidebar from '@/components/Sidebar';
@@ -26,6 +26,7 @@ export default function Home() {
 
 const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [truncatedIds, setTruncatedIds] = useState<Set<string>>(new Set());
+  const [retryState, setRetryState] = useState<{ attempt: number; secondsLeft: number } | null>(null);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, setInput, reload, append } =
     useChat({
@@ -33,7 +34,9 @@ const [errorBanner, setErrorBanner] = useState<string | null>(null);
       id: chatId,
       body: { model, skills: loadSkills() },
 onError: (error) => {
-        setErrorBanner(error.message || 'Une erreur est survenue, réessaie.');
+        const msg = error.message || '';
+        const isRateLimit = /rate.?limit|429|too many requests/i.test(msg);
+
         setMessages((msgs) => {
           const last = msgs[msgs.length - 1];
           if (last?.role === 'assistant' && !last.content?.trim()) {
@@ -41,9 +44,49 @@ onError: (error) => {
           }
           return msgs;
         });
+
+        if (isRateLimit) {
+          retryWithCountdown();
+        } else {
+          setErrorBanner(msg || 'Une erreur est survenue, réessaie.');
+        }
       },
+      const retryAttemptRef = useRef(0);
+
+  const retryWithCountdown = () => {
+    retryAttemptRef.current += 1;
+    const attempt = retryAttemptRef.current;
+
+    if (attempt > 5) {
+      setRetryState(null);
+      setErrorBanner("Le service est saturé (limite de requêtes atteinte). Réessaie dans quelques minutes.");
+      retryAttemptRef.current = 0;
+      return;
+    }
+
+    const waitSeconds = Math.min(5 * attempt, 30);
+    setErrorBanner(null);
+    setRetryState({ attempt, secondsLeft: waitSeconds });
+
+    const interval = setInterval(() => {
+      setRetryState((prev) => {
+        if (!prev) return prev;
+        if (prev.secondsLeft <= 1) {
+          clearInterval(interval);
+          return null;
+        }
+        return { ...prev, secondsLeft: prev.secondsLeft - 1 };
+      });
+    }, 1000);
+
+    setTimeout(() => {
+      clearInterval(interval);
+      reload({ body: { model, skills: loadSkills() } });
+    }, waitSeconds * 1000);
+  };
 onFinish: (message, opts) => {
         setErrorBanner(null);
+        retryAttemptRef.current = 0;
         setTruncatedIds((prev) => {
           const next = new Set(prev);
           const content = message.content || '';
@@ -165,7 +208,13 @@ const onRegenerate = () => {
             <>
               <div className="flex-1 overflow-y-auto">
                 <div className="max-w-3xl mx-auto w-full px-6 py-8">
-                  {errorBanner && (
+{retryState && (
+                    <div className="mb-4 flex items-center gap-2 px-4 py-2.5 bg-[#D97757]/10 border border-[#D97757]/30 rounded-xl text-sm text-[#D97757]">
+                      <span className="w-2 h-2 rounded-full bg-[#D97757] animate-pulse" />
+                      Trop de requêtes en ce moment — nouvelle tentative dans {retryState.secondsLeft}s (essai {retryState.attempt}/5)…
+                    </div>
+                  )}
+                  {errorBanner && !retryState && (
                     <div className="mb-4 px-4 py-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-sm text-red-400">
                       {errorBanner}
                     </div>
