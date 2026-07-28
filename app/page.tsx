@@ -24,11 +24,26 @@ export default function Home() {
   const [artifact, setArtifact] = useState<{ language: string; code: string; siblings?: { language: string; code: string }[] } | null>(null);
   const [showPersonalize, setShowPersonalize] = useState(false);
 
+const [errorBanner, setErrorBanner] = useState<string | null>(null);
+
   const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, setInput, reload } =
     useChat({
       api: '/api/chat',
       id: chatId,
       body: { model, skills: loadSkills() },
+      onError: (error) => {
+        setErrorBanner(error.message || 'Une erreur est survenue, réessaie.');
+        // On retire le message assistant vide/cassé laissé par l'erreur
+        // pour ne pas polluer l'historique du prochain envoi.
+        setMessages((msgs) => {
+          const last = msgs[msgs.length - 1];
+          if (last?.role === 'assistant' && !last.content?.trim()) {
+            return msgs.slice(0, -1);
+          }
+          return msgs;
+        });
+      },
+      onFinish: () => setErrorBanner(null),
     });
 
 useEffect(() => {
