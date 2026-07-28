@@ -24,34 +24,12 @@ export default function Home() {
   const [artifact, setArtifact] = useState<{ language: string; code: string; siblings?: { language: string; code: string }[] } | null>(null);
   const [showPersonalize, setShowPersonalize] = useState(false);
 
-const [errorBanner, setErrorBanner] = useState<string | null>(null);
+  const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [truncatedIds, setTruncatedIds] = useState<Set<string>>(new Set());
   const [retryState, setRetryState] = useState<{ attempt: number; secondsLeft: number } | null>(null);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, setInput, reload, append } =
-    useChat({
-      api: '/api/chat',
-      id: chatId,
-      body: { model, skills: loadSkills() },
-onError: (error) => {
-        const msg = error.message || '';
-        const isRateLimit = /rate.?limit|429|too many requests/i.test(msg);
-
-        setMessages((msgs) => {
-          const last = msgs[msgs.length - 1];
-          if (last?.role === 'assistant' && !last.content?.trim()) {
-            return msgs.slice(0, -1);
-          }
-          return msgs;
-        });
-
-        if (isRateLimit) {
-          retryWithCountdown();
-        } else {
-          setErrorBanner(msg || 'Une erreur est survenue, réessaie.');
-        }
-      },
-      const retryAttemptRef = useRef(0);
+  const retryAttemptRef = useRef(0);
+  const reloadRef = useRef<(() => void) | null>(null);
 
   const retryWithCountdown = () => {
     retryAttemptRef.current += 1;
@@ -81,20 +59,41 @@ onError: (error) => {
 
     setTimeout(() => {
       clearInterval(interval);
-      reload({ body: { model, skills: loadSkills() } });
+      if (reloadRef.current) {
+        reloadRef.current();
+      }
     }, waitSeconds * 1000);
   };
-onFinish: (message, opts) => {
+
+  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, setInput, reload, append } =
+    useChat({
+      api: '/api/chat',
+      id: chatId,
+      body: { model, skills: loadSkills() },
+      onError: (error) => {
+        const msg = error.message || '';
+        const isRateLimit = /rate.?limit|429|too many requests/i.test(msg);
+
+        setMessages((msgs) => {
+          const last = msgs[msgs.length - 1];
+          if (last?.role === 'assistant' && !last.content?.trim()) {
+            return msgs.slice(0, -1);
+          }
+          return msgs;
+        });
+
+        if (isRateLimit) {
+          retryWithCountdown();
+        } else {
+          setErrorBanner(msg || 'Une erreur est survenue, réessaie.');
+        }
+      },
+      onFinish: (message, opts) => {
         setErrorBanner(null);
         retryAttemptRef.current = 0;
         setTruncatedIds((prev) => {
           const next = new Set(prev);
           const content = message.content || '';
-          // finishReason === 'length' = coupure "propre" détectée par le SDK.
-          // Mais une coupure de connexion (timeout, réseau) ne déclenche pas
-          // toujours ce finishReason correctement : on détecte aussi les
-          // signes évidents d'un contenu manifestement incomplet (bloc de
-          // code jamais refermé, ou balise HTML jamais fermée).
           const openCodeFences = (content.match(/```/g) || []).length % 2 !== 0;
           const looksIncomplete =
             openCodeFences ||
@@ -110,12 +109,13 @@ onFinish: (message, opts) => {
       },
     });
 
-useEffect(() => {
+  useEffect(() => {
+    reloadRef.current = () => reload({ body: { model, skills: loadSkills() } });
+  }, [reload, model]);
+
+  useEffect(() => {
     if (messages.length === 0) return;
 
-    // Debounce : on n'écrit dans localStorage qu'1 seconde après la dernière
-    // modification, pas à chaque token reçu pendant le streaming (sinon ça
-    // sature le thread principal et fait freezer/crasher l'onglet).
     const timeout = setTimeout(() => {
       const title = messages[0]?.content?.slice(0, 40) || 'Nouvelle conversation';
       saveConversation({ id: chatId, title, messages, updatedAt: Date.now() });
@@ -146,7 +146,7 @@ useEffect(() => {
     reload({ body: { model, skills: loadSkills() } });
   };
 
-const onRegenerate = () => {
+  const onRegenerate = () => {
     reload({ body: { model, skills: loadSkills() } });
   };
 
@@ -208,7 +208,7 @@ const onRegenerate = () => {
             <>
               <div className="flex-1 overflow-y-auto">
                 <div className="max-w-3xl mx-auto w-full px-6 py-8">
-{retryState && (
+                  {retryState && (
                     <div className="mb-4 flex items-center gap-2 px-4 py-2.5 bg-[#D97757]/10 border border-[#D97757]/30 rounded-xl text-sm text-[#D97757]">
                       <span className="w-2 h-2 rounded-full bg-[#D97757] animate-pulse" />
                       Trop de requêtes en ce moment — nouvelle tentative dans {retryState.secondsLeft}s (essai {retryState.attempt}/5)…
@@ -220,7 +220,7 @@ const onRegenerate = () => {
                     </div>
                   )}
                   {messages.map((m) => (
-<ChatMessage
+                    <ChatMessage
                       key={m.id}
                       id={m.id}
                       role={m.role as 'user' | 'assistant'}
