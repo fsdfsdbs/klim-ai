@@ -166,11 +166,11 @@ export default function Home() {
     append(
       {
         role: 'user',
-        content:
-          "Continue exactement là où tu t'es arrêté, sans rien répéter de ce qui a déjà été écrit, jusqu'à la fin.",
+        content: "Continue exactement là où tu t'es arrêté, sans rien répéter de ce qui a déjà été écrit, jusqu'à la fin.",
       },
       { body: { model, skills: loadSkills() } }
     );
+    setInput('');
   };
 
   const isEmpty = messages.length === 0;
