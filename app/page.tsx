@@ -25,16 +25,15 @@ export default function Home() {
   const [showPersonalize, setShowPersonalize] = useState(false);
 
 const [errorBanner, setErrorBanner] = useState<string | null>(null);
+  const [truncatedIds, setTruncatedIds] = useState<Set<string>>(new Set());
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, setInput, reload } =
+  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, setInput, reload, append } =
     useChat({
       api: '/api/chat',
       id: chatId,
       body: { model, skills: loadSkills() },
-      onError: (error) => {
+onError: (error) => {
         setErrorBanner(error.message || 'Une erreur est survenue, réessaie.');
-        // On retire le message assistant vide/cassé laissé par l'erreur
-        // pour ne pas polluer l'historique du prochain envoi.
         setMessages((msgs) => {
           const last = msgs[msgs.length - 1];
           if (last?.role === 'assistant' && !last.content?.trim()) {
@@ -43,7 +42,18 @@ const [errorBanner, setErrorBanner] = useState<string | null>(null);
           return msgs;
         });
       },
-      onFinish: () => setErrorBanner(null),
+      onFinish: (message, opts) => {
+        setErrorBanner(null);
+        setTruncatedIds((prev) => {
+          const next = new Set(prev);
+          if ((opts as any)?.finishReason === 'length') {
+            next.add(message.id);
+          } else {
+            next.delete(message.id);
+          }
+          return next;
+        });
+      },
     });
 
 useEffect(() => {
@@ -82,8 +92,19 @@ useEffect(() => {
     reload({ body: { model, skills: loadSkills() } });
   };
 
-  const onRegenerate = () => {
+const onRegenerate = () => {
     reload({ body: { model, skills: loadSkills() } });
+  };
+
+  const onContinue = () => {
+    append(
+      {
+        role: 'user',
+        content:
+          "Continue exactement là où tu t'es arrêté, sans rien répéter de ce qui a déjà été écrit, jusqu'à la fin.",
+      },
+      { body: { model, skills: loadSkills() } }
+    );
   };
 
   const isEmpty = messages.length === 0;
@@ -139,7 +160,7 @@ useEffect(() => {
                     </div>
                   )}
                   {messages.map((m) => (
-                    <ChatMessage
+<ChatMessage
                       key={m.id}
                       id={m.id}
                       role={m.role as 'user' | 'assistant'}
@@ -151,7 +172,9 @@ useEffect(() => {
                       onOpenArtifact={setArtifact}
                       onEditMessage={onEditMessage}
                       onRegenerate={onRegenerate}
+                      onContinue={onContinue}
                       isLast={m.id === lastAssistantId}
+                      isTruncated={truncatedIds.has(m.id)}
                     />
                   ))}
                   {isLoading && messages[messages.length - 1]?.role === 'user' && (
