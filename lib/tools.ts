@@ -95,7 +95,7 @@ export const tools = {
         const [, owner, repo, type, branch, path = ''] = match;
         const cleanRepo = repo.replace(/\.git$/, '');
 
-        if (type === 'blob') {
+if (type === 'blob') {
           // Fichier précis : on récupère le contenu brut
           const rawUrl = `https://raw.githubusercontent.com/${owner}/${cleanRepo}/${branch}/${path}`;
           const res = await fetch(rawUrl);
@@ -104,8 +104,8 @@ export const tools = {
           return {
             type: 'file',
             path,
-            content: content.slice(0, 15000), // sécurité anti-token-explosion
-            truncated: content.length > 15000,
+            content: content.slice(0, 4000), // sécurité anti-token-explosion
+            truncated: content.length > 4000,
           };
         }
 
