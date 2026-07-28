@@ -119,18 +119,18 @@ function trimMessages(messages: Message[]): Message[] {
 // ──────────────────────────────────────────────
 
 function isRetryableError(error: unknown): boolean {
-  if (error instanceof Error && "status" in error) {
-    const status = (error as any).status;
-    if ([429, 500, 502, 503, 504].includes(status)) return true;
-  }
-  const msg = String(error ?? "");
+  const anyErr = error as any;
+  const status = anyErr?.status ?? anyErr?.statusCode ?? anyErr?.response?.status;
+  if ([429, 500, 502, 503, 504].includes(status)) return true;
+
+  const msg = String(anyErr?.message ?? anyErr ?? "");
   return /rate_limit|rate limit|429|too many requests|5\d{2}/i.test(msg);
 }
 
 async function withRetry<T>(
   fn: () => Promise<T>,
-  retries = 3,
-  baseDelayMs = 1000,
+  retries = 4,
+  baseDelayMs = 4000,
 ): Promise<T> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -196,7 +196,7 @@ export async function POST(req: Request): Promise<Response> {
         messages: coreMessages,
         tools,
         maxSteps: 5,
-        maxTokens: model.toLowerCase().includes("deepseek") ? 12000 : 6000,
+        maxTokens: model.toLowerCase().includes("deepseek") ? 12000 : model.toLowerCase().includes("cerebras") || model.includes("glm") ? 8000 : 4500,
         temperature: 0.7,
         onError: (err) => {
           console.error(`[streamText error] ${requestId}:`, err);
