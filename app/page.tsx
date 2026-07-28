@@ -42,11 +42,22 @@ onError: (error) => {
           return msgs;
         });
       },
-      onFinish: (message, opts) => {
+onFinish: (message, opts) => {
         setErrorBanner(null);
         setTruncatedIds((prev) => {
           const next = new Set(prev);
-          if ((opts as any)?.finishReason === 'length') {
+          const content = message.content || '';
+          // finishReason === 'length' = coupure "propre" détectée par le SDK.
+          // Mais une coupure de connexion (timeout, réseau) ne déclenche pas
+          // toujours ce finishReason correctement : on détecte aussi les
+          // signes évidents d'un contenu manifestement incomplet (bloc de
+          // code jamais refermé, ou balise HTML jamais fermée).
+          const openCodeFences = (content.match(/```/g) || []).length % 2 !== 0;
+          const looksIncomplete =
+            openCodeFences ||
+            (content.includes('<html') && !content.includes('</html>'));
+
+          if ((opts as any)?.finishReason === 'length' || looksIncomplete) {
             next.add(message.id);
           } else {
             next.delete(message.id);
