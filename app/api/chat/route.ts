@@ -24,7 +24,7 @@ function buildSystemPrompt(allMessages: Message[], skills: Skill[]): string {
     const lastUserContent =
       [...allMessages]
         .reverse()
-        .find((m): m is Message & { role: "user" } => m.role === "user")
+        .find((m) => m.role === "user")
         ?.content?.toLowerCase() ?? "";
 
     const matchedSkills = skills.filter((s) => {

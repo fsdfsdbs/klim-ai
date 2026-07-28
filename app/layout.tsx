@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Mon Chat AI',
-  description: 'Clone de Claude.ai avec Groq',
+  title: 'Klim',
+  description: 'Assistant IA de développement propulsé par Groq',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

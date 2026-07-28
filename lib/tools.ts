@@ -23,6 +23,9 @@ export const tools = {
     }),
     execute: async ({ language, code }) => {
       const conf = PISTON_LANG_MAP[language];
+      if (!conf) {
+        return { error: `Langage non supporté par le sandbox : ${language}.` };
+      }
       try {
         const res = await fetch('https://emkc.org/api/v2/piston/execute', {
           method: 'POST',

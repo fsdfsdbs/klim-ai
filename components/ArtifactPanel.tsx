@@ -78,6 +78,10 @@ export default function ArtifactPanel({ artifact, onClose }: Props) {
     setRunOutput(null);
     try {
       const conf = PISTON_LANG_MAP[artifact.language];
+      if (!conf) {
+        setRunOutput({ stdout: '', stderr: `Langage non exécutable : ${artifact.language}.` });
+        return;
+      }
       const res = await fetch('https://emkc.org/api/v2/piston/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
