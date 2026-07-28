@@ -163,13 +163,7 @@ export default function Home() {
   };
 
   const onContinue = () => {
-    append(
-      {
-        role: 'user',
-        content: "Continue exactement là où tu t'es arrêté, sans rien répéter de ce qui a déjà été écrit, jusqu'à la fin.",
-      },
-      { body: { model, skills: loadSkills() } }
-    );
+    reload({ body: { model, skills: loadSkills() } });
     setInput('');
   };
 
