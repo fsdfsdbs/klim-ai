@@ -133,6 +133,11 @@ useEffect(() => {
             <>
               <div className="flex-1 overflow-y-auto">
                 <div className="max-w-3xl mx-auto w-full px-6 py-8">
+                  {errorBanner && (
+                    <div className="mb-4 px-4 py-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-sm text-red-400">
+                      {errorBanner}
+                    </div>
+                  )}
                   {messages.map((m) => (
                     <ChatMessage
                       key={m.id}
