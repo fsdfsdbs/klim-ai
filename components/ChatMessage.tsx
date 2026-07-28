@@ -53,30 +53,51 @@ function useThrottledValue<T>(value: T, delay: number): T {
 }
 
 function parseSegments(content: string) {
-  const regex = /```(\w+)?\n([\s\S]*?)```/g;
   const segments: { type: 'text' | 'code'; content: string; language?: string }[] = [];
-  let lastIndex = 0;
-  let match;
-  while ((match = regex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      segments.push({ type: 'text', content: content.slice(lastIndex, match.index) });
+  let remaining = content;
+  
+  while (remaining.length > 0) {
+    const fenceMatch = remaining.match(/^```(\w+)?\n/);
+    
+    if (!fenceMatch) {
+      // Pas de début de bloc de code, on cherche le prochain ou on prend tout le reste
+      const nextFence = remaining.match(/```(\w+)?\n/);
+      if (!nextFence) {
+        // Plus de blocs du tout
+        if (remaining.trim().length > 0) {
+          segments.push({ type: 'text', content: remaining });
+        }
+        break;
+      }
+      
+      // Il y a un bloc plus loin, on prend le texte avant
+      const textBefore = remaining.slice(0, nextFence.index);
+      if (textBefore.length > 0) {
+        segments.push({ type: 'text', content: textBefore });
+      }
+      remaining = remaining.slice(nextFence.index!);
+      continue;
     }
-    segments.push({ type: 'code', content: match[2], language: match[1] || 'text' });
-    lastIndex = regex.lastIndex;
-  }
-  // Reste du contenu après le dernier bloc fermé.
-  const rest = content.slice(lastIndex);
-  // Gère un bloc de code OUVERT mais pas encore fermé (streaming / réponse tronquée).
-  const openFence = rest.match(/```(\w+)?\n([\s\S]*)$/);
-  if (openFence) {
-    const beforeOpen = rest.slice(0, openFence.index ?? 0);
-    if (beforeOpen.length > 0) {
-      segments.push({ type: 'text', content: beforeOpen });
+    
+    // On a trouvé un début de bloc de code
+    const language = fenceMatch[1] || 'text';
+    const afterStart = remaining.slice(fenceMatch[0].length);
+    
+    // Cherche la fin du bloc
+    const endMatch = afterStart.match(/\n```/);
+    
+    if (!endMatch) {
+      // Bloc non fermé (streaming en cours)
+      segments.push({ type: 'code', content: afterStart, language });
+      break;
     }
-    segments.push({ type: 'code', content: openFence[2], language: openFence[1] || 'text' });
-  } else if (rest.length > 0) {
-    segments.push({ type: 'text', content: rest });
+    
+    // Bloc complet
+    const codeContent = afterStart.slice(0, endMatch.index);
+    segments.push({ type: 'code', content: codeContent, language });
+    remaining = afterStart.slice(endMatch.index! + endMatch[0].length);
   }
+  
   return segments;
 }
 
