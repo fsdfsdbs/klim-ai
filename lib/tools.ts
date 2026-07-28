@@ -123,13 +123,17 @@ if (type === 'blob') {
           return { error: "Ce n'est pas un dossier valide." };
         }
 
+const limitedEntries = data.slice(0, 40).map((item: any) => ({
+          name: item.name,
+          path: item.path,
+          type: item.type, // 'file' ou 'dir'
+        }));
+
         return {
           type: 'directory',
-          entries: data.map((item: any) => ({
-            name: item.name,
-            path: item.path,
-            type: item.type, // 'file' ou 'dir'
-          })),
+          entries: limitedEntries,
+          truncated: data.length > 40,
+          totalCount: data.length,
         };
       } catch (e) {
         return { error: "Erreur lors de la récupération depuis GitHub." };
