@@ -4,7 +4,7 @@ import { getModel, SYSTEM_PROMPT } from "@/lib/groq";
 import { tools } from "@/lib/tools";
 import { streamText, convertToCoreMessages, type CoreMessage, type Message } from "ai";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const maxDuration = 60;
 
 // ──────────────────────────────────────────────
