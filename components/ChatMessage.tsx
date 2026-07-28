@@ -22,6 +22,7 @@ interface Props {
 const TOOL_LABELS: Record<string, string> = {
   execute_code: 'Test du code en cours…',
   web_search: 'Recherche web en cours…',
+  fetch_github: 'Lecture du dépôt GitHub en cours…',
 };
 
 // Throttle : ne met à jour la valeur affichée qu'au maximum toutes les `delay` ms.
