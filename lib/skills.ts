@@ -53,12 +53,14 @@ export function loadSkills(): Skill[] {
 }
 
 export function saveSkill(skill: Skill) {
+  if (typeof window === 'undefined') return;
   const all = loadSkills().filter((s) => s.id !== skill.id);
   all.push(skill);
   localStorage.setItem(KEY, JSON.stringify(all));
 }
 
 export function deleteSkill(id: string) {
+  if (typeof window === 'undefined') return;
   const all = loadSkills().filter((s) => s.id !== id);
   localStorage.setItem(KEY, JSON.stringify(all));
 }

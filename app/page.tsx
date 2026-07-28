@@ -30,6 +30,8 @@ export default function Home() {
 
   const retryAttemptRef = useRef(0);
   const reloadRef = useRef<(() => void) | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const retryWithCountdown = () => {
     retryAttemptRef.current += 1;
@@ -46,19 +48,22 @@ export default function Home() {
     setErrorBanner(null);
     setRetryState({ attempt, secondsLeft: waitSeconds });
 
-    const interval = setInterval(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    intervalRef.current = setInterval(() => {
       setRetryState((prev) => {
         if (!prev) return prev;
         if (prev.secondsLeft <= 1) {
-          clearInterval(interval);
+          if (intervalRef.current) clearInterval(intervalRef.current);
           return null;
         }
         return { ...prev, secondsLeft: prev.secondsLeft - 1 };
       });
     }, 1000);
 
-    setTimeout(() => {
-      clearInterval(interval);
+    timeoutRef.current = setTimeout(() => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
       if (reloadRef.current) {
         reloadRef.current();
       }
@@ -112,6 +117,13 @@ export default function Home() {
   useEffect(() => {
     reloadRef.current = () => reload({ body: { model, skills: loadSkills() } });
   }, [reload, model]);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (messages.length === 0) return;
