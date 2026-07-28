@@ -27,7 +27,7 @@ const TOOL_LABELS: Record<string, string> = {
   fetch_github: 'Lecture du dépôt GitHub en cours…',
 };
 
-// Throttle : ne met à jour la valeur affichée qu'au maximum toutes les `delay` ms.
+// Throttle : ne met à jour la valeur affichée qu'au maximum toutes les `deay` ms.
 // Évite de re-render tout le markdown à chaque token reçu pendant le streaming.
 function useThrottledValue<T>(value: T, delay: number): T {
   const [throttled, setThrottled] = useState(value);
