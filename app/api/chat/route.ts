@@ -1,5 +1,3 @@
-// app/api/chat/route.ts — v2.1 (sans dépendances externes)
-
 import { getModel, SYSTEM_PROMPT } from "@/lib/groq";
 import { tools } from "@/lib/tools";
 import { streamText, convertToCoreMessages, type CoreMessage, type Message } from "ai";
@@ -7,14 +5,9 @@ import { streamText, convertToCoreMessages, type CoreMessage, type Message } fro
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// ──────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────
-
 interface Skill {
   name: string;
   description: string;
-  trigger: string;
   content: string;
 }
 
@@ -25,19 +18,10 @@ interface ChatRequestBody {
   conversationId?: string;
 }
 
-// ──────────────────────────────────────────────
-// Helpers (inline, zero dep)
-// ──────────────────────────────────────────────
-
-/** Génère un ID court lisible (ex: "req_2aF8k3") */
 function generateId(prefix: string): string {
   const rand = crypto.randomUUID().slice(0, 8);
   return `${prefix}_${rand}`;
 }
-
-// ──────────────────────────────────────────────
-// Skills : matching par champ "trigger"
-// ──────────────────────────────────────────────
 
 const MAX_HISTORY = 14;
 
@@ -52,8 +36,8 @@ function buildSystemPrompt(
         .find((m): m is Message & { role: "user" } => m.role === "user")
         ?.content?.toLowerCase() ?? "";
 
-const matchedSkills = skills.filter((s) => {
-      const triggerText = s.trigger || (s as any).description;
+    const matchedSkills = skills.filter((s) => {
+      const triggerText = s.description || "";
       if (!triggerText) return false;
       const keywords = triggerText
         .toLowerCase()
@@ -74,10 +58,6 @@ const matchedSkills = skills.filter((s) => {
   }
 }
 
-// ──────────────────────────────────────────────
-// Trimming intelligent (préserve les paires)
-// ──────────────────────────────────────────────
-
 function trimMessages(messages: Message[]): Message[] {
   const cleaned = messages.filter((m) => {
     if (m.role !== 'assistant') return true;
@@ -93,10 +73,6 @@ function trimMessages(messages: Message[]): Message[] {
     trimmed = trimmed.slice(1);
   }
 
-  // Allège les résultats d'outils des messages ANCIENS (tout sauf le dernier) :
-  // un gros résultat (ex: listing GitHub, code exécuté) n'a plus besoin d'être
-  // renvoyé en entier au modèle une fois que la conversation a avancé —
-  // ça évite de re-dépasser le quota de tokens/minute à chaque nouveau message.
   return trimmed.map((m, i) => {
     const isLast = i === trimmed.length - 1;
     if (isLast || !(m as any).toolInvocations?.length) return m;
@@ -113,10 +89,6 @@ function trimMessages(messages: Message[]): Message[] {
     };
   });
 }
-
-// ──────────────────────────────────────────────
-// Retry avec backoff exponentiel
-// ──────────────────────────────────────────────
 
 function isRetryableError(error: unknown): boolean {
   const anyErr = error as any;
@@ -137,7 +109,7 @@ async function withRetry<T>(
       return await fn();
     } catch (error) {
       if (isRetryableError(error) && attempt < retries) {
-        const delay = baseDelayMs * Math.pow(2, attempt); // 1s, 2s, 4s
+        const delay = baseDelayMs * Math.pow(2, attempt);
         console.warn(`[retry] tentative ${attempt + 1}/${retries}, attente ${delay}ms`);
         await new Promise((r) => setTimeout(r, delay));
         continue;
@@ -148,16 +120,11 @@ async function withRetry<T>(
   throw new Error("Échec après plusieurs tentatives");
 }
 
-// ──────────────────────────────────────────────
-// POST — Chat
-// ──────────────────────────────────────────────
-
 export async function POST(req: Request): Promise<Response> {
   const requestId = generateId("req");
   const startTime = Date.now();
 
   try {
-    // ── Validation minimale ──
     let body: ChatRequestBody;
     try {
       body = await req.json();
@@ -179,16 +146,10 @@ export async function POST(req: Request): Promise<Response> {
     const model = body.model ?? "openai/gpt-oss-120b";
     const skills = body.skills ?? [];
 
-    // ── Trimming ──
     const trimmedMessages = trimMessages(rawMessages);
-
-    // ── Conversion au format core ──
     const coreMessages: CoreMessage[] = convertToCoreMessages(trimmedMessages);
-
-    // ── System prompt avec skills ──
     const systemPrompt = buildSystemPrompt(rawMessages, skills);
 
-    // ── Streaming ──
     const result = await withRetry(async () =>
       streamText({
         model: getModel(model),
