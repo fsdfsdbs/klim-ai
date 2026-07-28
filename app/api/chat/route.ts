@@ -79,9 +79,6 @@ const matchedSkills = skills.filter((s) => {
 // ──────────────────────────────────────────────
 
 function trimMessages(messages: Message[]): Message[] {
-  // On retire d'abord tout message assistant "cassé" : vide, sans contenu
-  // ET sans appel d'outil en cours. Ça arrive après une génération interrompue
-  // et ça fait planter silencieusement la requête suivante.
   const cleaned = messages.filter((m) => {
     if (m.role !== 'assistant') return true;
     const hasContent = !!m.content?.trim();
@@ -96,7 +93,25 @@ function trimMessages(messages: Message[]): Message[] {
     trimmed = trimmed.slice(1);
   }
 
-  return trimmed;
+  // Allège les résultats d'outils des messages ANCIENS (tout sauf le dernier) :
+  // un gros résultat (ex: listing GitHub, code exécuté) n'a plus besoin d'être
+  // renvoyé en entier au modèle une fois que la conversation a avancé —
+  // ça évite de re-dépasser le quota de tokens/minute à chaque nouveau message.
+  return trimmed.map((m, i) => {
+    const isLast = i === trimmed.length - 1;
+    if (isLast || !(m as any).toolInvocations?.length) return m;
+
+    return {
+      ...m,
+      toolInvocations: (m as any).toolInvocations.map((t: any) => ({
+        ...t,
+        result:
+          t.state === 'result'
+            ? { note: '(résultat d\'un outil précédent, tronqué pour économiser des tokens)' }
+            : t.result,
+      })),
+    };
+  });
 }
 
 // ──────────────────────────────────────────────
