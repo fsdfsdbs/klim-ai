@@ -69,8 +69,9 @@ function parseSegments(content: string) {
   // Gère un bloc de code OUVERT mais pas encore fermé (streaming / réponse tronquée).
   const openFence = rest.match(/```(\w+)?\n([\s\S]*)$/);
   if (openFence) {
-    if ((openFence.index ?? 0) > 0) {
-      segments.push({ type: 'text', content: rest.slice(0, openFence.index) });
+    const beforeOpen = rest.slice(0, openFence.index ?? 0);
+    if (beforeOpen.length > 0) {
+      segments.push({ type: 'text', content: beforeOpen });
     }
     segments.push({ type: 'code', content: openFence[2], language: openFence[1] || 'text' });
   } else if (rest.length > 0) {

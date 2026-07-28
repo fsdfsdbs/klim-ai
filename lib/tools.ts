@@ -36,14 +36,18 @@ export const tools = {
             files: [{ content: code }],
           }),
         });
+        if (!res.ok) {
+          return { error: `Erreur HTTP ${res.status} lors de l'exécution du sandbox.` };
+        }
         const data = await res.json();
         return {
           stdout: data.run?.stdout ?? '',
           stderr: data.run?.stderr ?? '',
           code_exit: data.run?.code ?? null,
+          run_error: data.run?.error ?? null,
         };
-      } catch (e) {
-        return { error: "Erreur lors de l'exécution du sandbox." };
+      } catch (e: any) {
+        return { error: `Erreur lors de l'exécution du sandbox: ${e?.message || 'erreur inconnue'}` };
       }
     },
   }),
@@ -68,6 +72,9 @@ export const tools = {
             max_results: 5,
           }),
         });
+        if (!res.ok) {
+          return { error: `Erreur HTTP ${res.status} lors de la recherche web.` };
+        }
         const data = await res.json();
         return {
           results: (data.results || []).map((r: any) => ({
@@ -76,8 +83,8 @@ export const tools = {
             content: r.content,
           })),
         };
-      } catch (e) {
-        return { error: 'Erreur lors de la recherche web.' };
+      } catch (e: any) {
+        return { error: `Erreur lors de la recherche web: ${e?.message || 'erreur inconnue'}` };
       }
     },
   }),
@@ -98,7 +105,7 @@ export const tools = {
         const [, owner, repo, type, branch, path = ''] = match;
         const cleanRepo = repo.replace(/\.git$/, '');
 
-if (type === 'blob') {
+        if (type === 'blob') {
           // Fichier précis : on récupère le contenu brut
           const rawUrl = `https://raw.githubusercontent.com/${owner}/${cleanRepo}/${branch}/${path}`;
           const res = await fetch(rawUrl);
@@ -126,7 +133,7 @@ if (type === 'blob') {
           return { error: "Ce n'est pas un dossier valide." };
         }
 
-const limitedEntries = data.slice(0, 40).map((item: any) => ({
+        const limitedEntries = data.slice(0, 40).map((item: any) => ({
           name: item.name,
           path: item.path,
           type: item.type, // 'file' ou 'dir'
@@ -138,8 +145,8 @@ const limitedEntries = data.slice(0, 40).map((item: any) => ({
           truncated: data.length > 40,
           totalCount: data.length,
         };
-      } catch (e) {
-        return { error: "Erreur lors de la récupération depuis GitHub." };
+      } catch (e: any) {
+        return { error: `Erreur lors de la récupération depuis GitHub: ${e?.message || 'erreur inconnue'}` };
       }
     },
   }),

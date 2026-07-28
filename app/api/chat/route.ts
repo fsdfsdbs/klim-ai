@@ -78,8 +78,8 @@ export async function POST(req: Request): Promise<Response> {
       system: systemPrompt,
       messages: coreMessages,
       tools,
-      maxSteps: 2, // Limite les boucles d'outils pour économiser les tokens
-      maxTokens: 8000, // Assez large pour un site HTML complet en un seul bloc
+      maxSteps: 5, // Permet plus d'itérations d'outils pour les tâches complexes
+      maxTokens: 8192, // Maximum supporté par la plupart des modèles
       temperature: 0.7,
     });
 
