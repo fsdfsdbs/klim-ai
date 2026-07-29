@@ -23,6 +23,7 @@ export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [artifact, setArtifact] = useState<{ language: string; code: string; siblings?: { language: string; code: string }[] } | null>(null);
   const [showPersonalize, setShowPersonalize] = useState(false);
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
 
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [truncatedIds, setTruncatedIds] = useState<Set<string>>(new Set());
@@ -40,6 +41,7 @@ export default function Home() {
     if (attempt > 5) {
       setRetryState(null);
       setErrorBanner("Le service est saturé (limite de requêtes atteinte). Réessaie dans quelques minutes.");
+      setIsWaitingForResponse(false);
       retryAttemptRef.current = 0;
       return;
     }
@@ -47,6 +49,7 @@ export default function Home() {
     const waitSeconds = Math.min(5 * attempt, 30);
     setErrorBanner(null);
     setRetryState({ attempt, secondsLeft: waitSeconds });
+    setIsWaitingForResponse(true);
 
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -66,6 +69,8 @@ export default function Home() {
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (reloadRef.current) {
         reloadRef.current();
+      } else {
+        setIsWaitingForResponse(false);
       }
     }, waitSeconds * 1000);
   };
@@ -76,6 +81,7 @@ export default function Home() {
       id: chatId,
       body: { model, skills: loadSkills() },
       onError: (error) => {
+        setIsWaitingForResponse(false);
         const msg = error.message || '';
         const isRateLimit = /rate.?limit|429|too many requests/i.test(msg);
 
@@ -94,6 +100,7 @@ export default function Home() {
         }
       },
       onFinish: (message, opts) => {
+        setIsWaitingForResponse(false);
         setErrorBanner(null);
         retryAttemptRef.current = 0;
         setTruncatedIds((prev) => {
@@ -159,12 +166,19 @@ export default function Home() {
   };
 
   const onRegenerate = () => {
+    setIsWaitingForResponse(true);
     reload({ body: { model, skills: loadSkills() } });
   };
 
   const onContinue = () => {
+    setIsWaitingForResponse(true);
     reload({ body: { model, skills: loadSkills() } });
     setInput('');
+  };
+
+  const customHandleSubmit = (e: React.FormEvent, options?: any) => {
+    setIsWaitingForResponse(true);
+    handleSubmit(e, options);
   };
 
   const isEmpty = messages.length === 0;
@@ -192,8 +206,8 @@ export default function Home() {
                 <ChatInput
                   input={input}
                   handleInputChange={handleInputChange}
-                  handleSubmit={handleSubmit}
-                  isLoading={isLoading}
+                  handleSubmit={customHandleSubmit}
+                  isLoading={isLoading || isWaitingForResponse}
                   model={model}
                   setModel={setModel}
                 />
@@ -243,11 +257,11 @@ export default function Home() {
                       isTruncated={truncatedIds.has(m.id)}
                     />
                   ))}
-                  {isLoading && messages[messages.length - 1]?.role === 'user' && (
+                  {(isLoading || isWaitingForResponse) && (
                     <div className="flex gap-1.5 px-1 py-2">
-                      <span className="w-2 h-2 rounded-full bg-[#D97757] animate-bounce [animation-delay:-0.3s]" />
-                      <span className="w-2 h-2 rounded-full bg-[#D97757] animate-bounce [animation-delay:-0.15s]" />
-                      <span className="w-2 h-2 rounded-full bg-[#D97757] animate-bounce" />
+                      <span className="w-2 h-2 rounded-full bg-[#D97757] animate-typing-bounce" />
+                      <span className="w-2 h-2 rounded-full bg-[#D97757] animate-typing-bounce [animation-delay:-0.2s]" />
+                      <span className="w-2 h-2 rounded-full bg-[#D97757] animate-typing-bounce [animation-delay:-0.4s]" />
                     </div>
                   )}
                 </div>
@@ -256,8 +270,8 @@ export default function Home() {
                 <ChatInput
                   input={input}
                   handleInputChange={handleInputChange}
-                  handleSubmit={handleSubmit}
-                  isLoading={isLoading}
+                  handleSubmit={customHandleSubmit}
+                  isLoading={isLoading || isWaitingForResponse}
                   model={model}
                   setModel={setModel}
                 />
