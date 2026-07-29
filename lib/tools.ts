@@ -43,7 +43,7 @@ export const tools = {
         return {
           stdout: data.run?.stdout ?? '',
           stderr: data.run?.stderr ?? '',
-          code_exit: data.run?.code ?? null,
+          exit_code: data.run?.code ?? null,
           run_error: data.run?.error ?? null,
         };
       } catch (e: any) {
