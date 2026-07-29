@@ -57,6 +57,39 @@ function trimMessages(messages: Message[]): Message[] {
   return trimmed;
 }
 
+// Helper pour détecter les erreurs de rate limit
+function isRateLimitError(error: any): boolean {
+  // Vérifier le message
+  const message = (error?.message || '').toLowerCase();
+  if (message.includes('rate limit') || 
+      message.includes('429') || 
+      message.includes('too many requests') ||
+      message.includes('quota') ||
+      message.includes('limit') ||
+      message.includes('rate_limit_exceeded')) {
+    return true;
+  }
+  
+  // Vérifier le code HTTP
+  if (error?.status === 429) {
+    return true;
+  }
+  
+  // Vérifier le type d'erreur
+  if (error?.type === 'rateLimitError' || 
+      error?.code === 'rate_limit_exceeded' ||
+      error?.name === 'RateLimitError') {
+    return true;
+  }
+  
+  // Vérifier dans les causes
+  if (error?.cause) {
+    return isRateLimitError(error.cause);
+  }
+  
+  return false;
+}
+
 export async function POST(req: Request): Promise<Response> {
   try {
     const body: ChatRequestBody = await req.json();
@@ -78,17 +111,28 @@ export async function POST(req: Request): Promise<Response> {
       system: systemPrompt,
       messages: coreMessages,
       tools,
-      maxSteps: 5, // Permet plus d'itérations d'outils pour les tâches complexes
-      maxTokens: 4096, // Limite raisonnable compatible avec la majorité des modèles Groq (Llama 3.1 8B/70B, Mixtral, etc.)
+      maxSteps: 5,
+      maxTokens: 4096,
       temperature: 0.7,
     });
 
     return result.toDataStreamResponse();
   } catch (error: any) {
-    console.error("[chat] ERREUR:", error?.message || error);
+    console.error("[chat] ERREUR:", error);
+    
+    const isRateLimit = isRateLimitError(error);
+    const status = isRateLimit ? 429 : 500;
+    
+    let message = "Erreur du serveur";
+    if (isRateLimit) {
+      message = "Rate limit atteint - trop de requêtes. Veuillez réessayer dans quelques secondes.";
+    } else if (error?.message) {
+      message = error.message;
+    }
+
     return new Response(
-      JSON.stringify({ error: error?.message || "Erreur du serveur" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ error: message, isRateLimit }),
+      { status, headers: { "Content-Type": "application/json" } }
     );
   }
 }

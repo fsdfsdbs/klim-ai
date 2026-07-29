@@ -17,6 +17,28 @@ const SUGGESTIONS = [
   'Aide-moi à déboguer mon code',
 ];
 
+// Helper pour détecter les erreurs de rate limit
+function isRateLimitError(error: any): boolean {
+  const msg = (error?.message || '').toLowerCase();
+  const isRateLimit = /rate.?limit|429|too many requests|quota|limit|rate_limit_exceeded/i.test(msg);
+  
+  if (error?.status === 429) return true;
+  if (error?.code === 'rate_limit_exceeded') return true;
+  if (error?.type === 'rateLimitError') return true;
+  
+  if (error?.response) {
+    try {
+      const data = typeof error.response === 'string' ? JSON.parse(error.response) : error.response;
+      if (data?.isRateLimit) return true;
+      if (data?.error?.toLowerCase().includes('rate limit')) return true;
+    } catch {
+      // ignore
+    }
+  }
+  
+  return isRateLimit;
+}
+
 export default function Home() {
   const [model, setModel] = useState('openai/gpt-oss-120b');
   const [chatId, setChatId] = useState<string>(() => crypto.randomUUID());
@@ -28,11 +50,35 @@ export default function Home() {
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [truncatedIds, setTruncatedIds] = useState<Set<string>>(new Set());
   const [retryState, setRetryState] = useState<{ attempt: number; secondsLeft: number } | null>(null);
+  
+  // État pour bloquer les requêtes trop rapides
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [cooldownMessage, setCooldownMessage] = useState<string | null>(null);
 
   const retryAttemptRef = useRef(0);
   const reloadRef = useRef<(() => void) | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastRequestTimeRef = useRef<number>(0);
+  const cooldownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Délai minimum entre les requêtes (en ms) - AUGMENTÉ à 5 secondes pour éviter le rate limit strict
+  const MIN_REQUEST_DELAY = 5000;
+
+  // Fonction pour vérifier et appliquer le cooldown
+  const checkCooldown = (): boolean => {
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTimeRef.current;
+    
+    if (timeSinceLastRequest < MIN_REQUEST_DELAY) {
+      const waitTime = Math.ceil((MIN_REQUEST_DELAY - timeSinceLastRequest) / 1000);
+      setCooldownMessage(`Attends ${waitTime} seconde(s) pour éviter le rate limit de Groq.`);
+      if (cooldownTimeoutRef.current) clearTimeout(cooldownTimeoutRef.current);
+      cooldownTimeoutRef.current = setTimeout(() => setCooldownMessage(null), waitTime * 1000);
+      return true; // En cooldown
+    }
+    return false; // Pas en cooldown
+  };
 
   const retryWithCountdown = () => {
     retryAttemptRef.current += 1;
@@ -40,16 +86,26 @@ export default function Home() {
 
     if (attempt > 5) {
       setRetryState(null);
-      setErrorBanner("Le service est saturé (limite de requêtes atteinte). Réessaie dans quelques minutes.");
+      setErrorBanner("Le service Groq est saturé (limite de requêtes atteinte). Attends 30 secondes avant de réessayer.");
       setIsWaitingForResponse(false);
+      setIsRateLimited(true);
       retryAttemptRef.current = 0;
+      
+      // Réactiver après 30 secondes
+      setTimeout(() => {
+        setIsRateLimited(false);
+        setErrorBanner(null);
+      }, 30000);
       return;
     }
 
-    const waitSeconds = Math.min(5 * attempt, 30);
+    // Augmenter le délai d'attente pour Groq (démarre à 10s, max 60s)
+    const waitSeconds = Math.min(10 * attempt, 60);
     setErrorBanner(null);
+    setCooldownMessage(null);
     setRetryState({ attempt, secondsLeft: waitSeconds });
     setIsWaitingForResponse(true);
+    setIsRateLimited(true);
 
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -67,7 +123,9 @@ export default function Home() {
 
     timeoutRef.current = setTimeout(() => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      setIsRateLimited(false);
       if (reloadRef.current) {
+        lastRequestTimeRef.current = Date.now();
         reloadRef.current();
       } else {
         setIsWaitingForResponse(false);
@@ -82,8 +140,14 @@ export default function Home() {
       body: { model, skills: loadSkills() },
       onError: (error) => {
         setIsWaitingForResponse(false);
-        const msg = error.message || '';
-        const isRateLimit = /rate.?limit|429|too many requests/i.test(msg);
+        
+        if (isRateLimitError(error)) {
+          setIsRateLimited(true);
+          setCooldownMessage(null);
+          retryWithCountdown();
+        } else {
+          setErrorBanner(error.message || 'Une erreur est survenue, réessaie.');
+        }
 
         setMessages((msgs) => {
           const last = msgs[msgs.length - 1];
@@ -92,17 +156,13 @@ export default function Home() {
           }
           return msgs;
         });
-
-        if (isRateLimit) {
-          retryWithCountdown();
-        } else {
-          setErrorBanner(msg || 'Une erreur est survenue, réessaie.');
-        }
       },
       onFinish: (message, opts) => {
         setIsWaitingForResponse(false);
         setErrorBanner(null);
+        setCooldownMessage(null);
         retryAttemptRef.current = 0;
+        lastRequestTimeRef.current = Date.now();
         setTruncatedIds((prev) => {
           const next = new Set(prev);
           const content = message.content || '';
@@ -129,6 +189,7 @@ export default function Home() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (cooldownTimeoutRef.current) clearTimeout(cooldownTimeoutRef.current);
     };
   }, []);
 
@@ -166,18 +227,42 @@ export default function Home() {
   };
 
   const onRegenerate = () => {
+    if (isRateLimited) {
+      setErrorBanner("Attends que la limite de requêtes Groq soit levée avant de régénérer.");
+      return;
+    }
+    if (checkCooldown()) return;
+    
     setIsWaitingForResponse(true);
+    lastRequestTimeRef.current = Date.now();
     reload({ body: { model, skills: loadSkills() } });
   };
 
   const onContinue = () => {
+    if (isRateLimited) {
+      setErrorBanner("Attends que la limite de requêtes Groq soit levée avant de continuer.");
+      return;
+    }
+    if (checkCooldown()) return;
+    
     setIsWaitingForResponse(true);
-    reload({ body: { model, skills: loadSkills() } });
+    lastRequestTimeRef.current = Date.now();
+    append({
+      role: 'assistant',
+      content: '',
+    });
     setInput('');
   };
 
   const customHandleSubmit = (e: React.FormEvent, options?: any) => {
+    if (isRateLimited) {
+      setErrorBanner("Attends que la limite de requêtes Groq soit levée avant d'envoyer un nouveau message.");
+      return;
+    }
+    if (checkCooldown()) return;
+    
     setIsWaitingForResponse(true);
+    lastRequestTimeRef.current = Date.now();
     handleSubmit(e, options);
   };
 
@@ -207,7 +292,7 @@ export default function Home() {
                   input={input}
                   handleInputChange={handleInputChange}
                   handleSubmit={customHandleSubmit}
-                  isLoading={isLoading || isWaitingForResponse}
+                  isLoading={isLoading || isWaitingForResponse || isRateLimited}
                   model={model}
                   setModel={setModel}
                 />
@@ -231,12 +316,17 @@ export default function Home() {
                   {retryState && (
                     <div className="mb-4 flex items-center gap-2 px-4 py-2.5 bg-[#D97757]/10 border border-[#D97757]/30 rounded-xl text-sm text-[#D97757]">
                       <span className="w-2 h-2 rounded-full bg-[#D97757] animate-pulse" />
-                      Trop de requêtes en ce moment — nouvelle tentative dans {retryState.secondsLeft}s (essai {retryState.attempt}/5)…
+                      Rate limit Groq — nouvelle tentative dans {retryState.secondsLeft}s (essai {retryState.attempt}/5)…
                     </div>
                   )}
                   {errorBanner && !retryState && (
                     <div className="mb-4 px-4 py-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-sm text-red-400">
                       {errorBanner}
+                    </div>
+                  )}
+                  {cooldownMessage && !retryState && !errorBanner && (
+                    <div className="mb-4 px-4 py-2.5 bg-orange-500/10 border border-orange-500/30 rounded-xl text-sm text-orange-400">
+                      {cooldownMessage}
                     </div>
                   )}
                   {messages.map((m) => (
@@ -271,7 +361,7 @@ export default function Home() {
                   input={input}
                   handleInputChange={handleInputChange}
                   handleSubmit={customHandleSubmit}
-                  isLoading={isLoading || isWaitingForResponse}
+                  isLoading={isLoading || isWaitingForResponse || isRateLimited}
                   model={model}
                   setModel={setModel}
                 />
